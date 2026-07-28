@@ -27,9 +27,7 @@ async function getCampaignSitemapEntries(): Promise<
         url: absoluteUrl(`/${locale}/causes/${campaign.id}`),
         lastModified: new Date(campaign.created_at * 1000),
         // Active campaigns may receive contributions — crawl them more often.
-        changeFrequency: (campaign.is_active ? "hourly" : "weekly") as
-          | "hourly"
-          | "weekly",
+        changeFrequency: (campaign.is_active ? "hourly" : "weekly") as "hourly" | "weekly",
         priority: campaign.is_active ? 0.9 : 0.7,
       })),
     );

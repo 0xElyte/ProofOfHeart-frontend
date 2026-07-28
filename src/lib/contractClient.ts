@@ -38,7 +38,12 @@ const NETWORK_PASSPHRASE =
   process.env.NEXT_PUBLIC_NETWORK_PASSPHRASE ?? "Test SDF Network ; September 2015";
 
 export type TransactionLifecyclePhase =
-  "building" | "signing" | "submitting" | "confirming" | "confirmed" | "failed";
+  | "building"
+  | "signing"
+  | "submitting"
+  | "confirming"
+  | "confirmed"
+  | "failed";
 
 export interface TransactionLifecycleUpdate {
   phase: TransactionLifecyclePhase;
@@ -1242,10 +1247,7 @@ export async function claimReserve(
   if (USE_MOCKS) return emitMockLifecycle("mock_tx_claim_reserve", options);
   const { address: callerAddress } = await getAddress();
   const contract = new StellarSdk.Contract(CONTRACT_ADDRESS);
-  const op = contract.call(
-    "claim_reserve",
-    StellarSdk.nativeToScVal(campaignId, { type: "u32" }),
-  );
+  const op = contract.call("claim_reserve", StellarSdk.nativeToScVal(campaignId, { type: "u32" }));
   try {
     const txResult = await buildAndSubmitTransaction(callerAddress, op, {
       ...options,
