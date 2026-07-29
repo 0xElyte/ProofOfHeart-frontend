@@ -6,6 +6,7 @@ import Amount from "./Amount";
 import { useTopContributors } from "@/hooks/useTopContributors";
 import { isWalletAnonymous, setWalletAnonymous } from "@/lib/contributorLeaderboard";
 import { normalizeAddress } from "@/lib/stellar";
+import { calculateGamificationProfile } from "@/lib/gamification";
 
 interface ContributorLeaderboardProps {
   campaignId: number;
@@ -108,6 +109,15 @@ export default function ContributorLeaderboard({
                   <div className="min-w-0">
                     <p className="font-mono text-zinc-800 dark:text-zinc-200 truncate flex items-center gap-1.5">
                       <span>{item.truncatedAddress}</span>
+                      {(() => {
+                        const amountXlm = item.totalAmountStroops ? Number(item.totalAmountStroops) / 10_000_000 : 0;
+                        const profile = calculateGamificationProfile(amountXlm);
+                        return (
+                          <span className="px-1.5 py-0.5 rounded bg-rose-500/10 text-rose-600 dark:text-rose-400 text-[10px] font-sans font-medium border border-rose-500/20">
+                            {profile.level}
+                          </span>
+                        );
+                      })()}
                       {isSelf && (
                         <span className="px-1.5 py-0.5 rounded bg-blue-100 dark:bg-blue-800 text-blue-700 dark:text-blue-200 text-[10px] font-sans font-semibold">
                           You
