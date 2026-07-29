@@ -107,11 +107,14 @@ export default function CommentComposer({
                 onChange={(e) => setContent(e.target.value)}
                 placeholder={placeholder}
                 rows={Math.max(2, Math.min(5, content.split("\n").length))}
+                aria-invalid={isOverLimit}
+                aria-describedby="comment-content-count"
                 className="w-full px-4 py-3 bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-700 rounded-xl text-zinc-900 dark:text-zinc-50 placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all text-sm leading-relaxed resize-none"
                 autoFocus={isExpanded || isReply}
               />
               <div className="flex justify-between items-center px-1">
                 <span
+                  id="comment-content-count"
                   className={`text-[10px] font-mono ${
                     isOverLimit
                       ? "text-red-500"

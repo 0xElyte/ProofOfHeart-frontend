@@ -92,6 +92,13 @@ describe("Causes filters URL sync", () => {
     jest.useRealTimers();
   });
 
+  it("associates the status and sort selects with their labels (issue #676)", async () => {
+    render(<CausesClient />);
+
+    expect(screen.getByLabelText("labelStatus")).toBeInTheDocument();
+    expect(screen.getByLabelText("labelSortBy")).toBeInTheDocument();
+  });
+
   it("syncs category, status, sort and search to URL", async () => {
     const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime });
     render(<CausesClient />);

@@ -28,10 +28,12 @@ function AddressInput({
   value,
   onChange,
   placeholder,
+  ariaLabel,
 }: {
   value: string;
   onChange: (v: string) => void;
   placeholder: string;
+  ariaLabel: string;
 }) {
   return (
     <input
@@ -39,6 +41,7 @@ function AddressInput({
       value={value}
       onChange={(e) => onChange(e.target.value)}
       placeholder={placeholder}
+      aria-label={ariaLabel}
       className="flex-1 min-w-0 px-3 py-2 text-sm border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-50 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
     />
   );
@@ -192,16 +195,20 @@ export default function MultiSigWithdrawalPanel({
           {isCreator && showSetup && (
             <div className="space-y-4">
               <div>
-                <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300 mb-2">
+                <span
+                  id="multisig-signers-label"
+                  className="block text-xs font-medium text-zinc-700 dark:text-zinc-300 mb-2"
+                >
                   {t("signersLabel")}
-                </label>
-                <div className="space-y-2">
+                </span>
+                <div className="space-y-2" role="group" aria-labelledby="multisig-signers-label">
                   {signerInputs.map((val, idx) => (
                     <div key={idx} className="flex gap-2 items-center">
                       <AddressInput
                         value={val}
                         onChange={(v) => handleSignerChange(idx, v)}
                         placeholder={t("signerPlaceholder")}
+                        ariaLabel={t("signerAddressAriaLabel", { index: idx + 1 })}
                       />
                       {signerInputs.length > 1 && (
                         <button
@@ -236,18 +243,26 @@ export default function MultiSigWithdrawalPanel({
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300 mb-1">
+                <label
+                  htmlFor="multisig-threshold-input"
+                  className="block text-xs font-medium text-zinc-700 dark:text-zinc-300 mb-1"
+                >
                   {t("thresholdLabel")}
                 </label>
                 <input
+                  id="multisig-threshold-input"
                   type="number"
                   min={1}
                   max={signerInputs.filter(Boolean).length || 1}
                   value={requiredSigs}
                   onChange={(e) => setRequiredSigs(Number(e.target.value))}
+                  aria-describedby="multisig-threshold-hint"
                   className="w-24 px-3 py-2 text-sm border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
-                <span className="ml-2 text-xs text-zinc-500 dark:text-zinc-400">
+                <span
+                  id="multisig-threshold-hint"
+                  className="ml-2 text-xs text-zinc-500 dark:text-zinc-400"
+                >
                   {t("thresholdOf", { total: signerInputs.filter(Boolean).length })}
                 </span>
               </div>
