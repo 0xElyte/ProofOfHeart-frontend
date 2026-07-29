@@ -683,11 +683,12 @@ function CausesContent() {
                       </p>
                     )}
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                      {visibleCampaigns.map((campaign) => (
+                      {visibleCampaigns.map((campaign, index) => (
                         <CauseCard
                           key={campaign.id}
                           campaign={campaign}
                           userWalletAddress={userWalletAddress}
+                          priority={index < 3}
                           onVote={handleVote}
                           onCancel={handleCancel}
                           onClaimRefund={handleClaimRefund}
