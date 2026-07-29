@@ -13,7 +13,12 @@
     "languageChanged": "Idioma cambiado a {language}",
     "skipToMainContent": "Saltar al contenido principal",
     "xlmPrecisionWarning": "Redondeado a {amount} XLM",
-    "profile": "Perfil"
+    "profile": "Perfil",
+    "socialLoginDivider": "o",
+    "continueWithGoogle": "Continuar con Google",
+    "continueWithX": "Continuar con X",
+    "socialLoginHint": "Crea una billetera Stellar protegida por tu cuenta social, sin necesidad de extensión.",
+    "signedInAs": "Sesión iniciada como {name}"
   },
   "Home": {
     "heroTitle": "Validación descentralizada para causas impulsadas por el corazón.",
