@@ -1,6 +1,7 @@
 import createIntlMiddleware from "next-intl/middleware";
 import { NextRequest, NextResponse } from "next/server";
 import { routing } from "./i18n/routing";
+import { buildCspHeader, CSP_NONCE_HEADER, generateCspNonce } from "./lib/csp";
 
 const intlMiddleware = createIntlMiddleware(routing);
 
@@ -43,7 +44,21 @@ export default function middleware(req: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  return intlMiddleware(req);
+  // #569 — Generate a per-request CSP nonce so inline scripts (the theme
+  // blocking script in <head>) can be allow-listed without `'unsafe-inline'`.
+  const nonce = generateCspNonce();
+
+  // Propagate the nonce to the layout via a request header so it can attach the
+  // same value to the <script nonce="…"> attribute.
+  req.headers.set(CSP_NONCE_HEADER, nonce);
+
+  const response = intlMiddleware(req);
+
+  // Apply strict CSP with the nonce. Next.js merges headers from middleware
+  // with those from next.config.ts; setting it here overrides the static value.
+  response.headers.set("Content-Security-Policy", buildCspHeader(nonce));
+
+  return response;
 }
 
 export { MAINTENANCE_COOKIE, BYPASS_COOKIE_MAX_AGE };
