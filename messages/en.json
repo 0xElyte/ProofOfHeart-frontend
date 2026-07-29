@@ -13,7 +13,12 @@
     "languageChanged": "Language changed to {language}",
     "skipToMainContent": "Skip to main content",
     "xlmPrecisionWarning": "Rounded to {amount} XLM",
-    "profile": "Profile"
+    "profile": "Profile",
+    "socialLoginDivider": "or",
+    "continueWithGoogle": "Continue with Google",
+    "continueWithX": "Continue with X",
+    "socialLoginHint": "Creates a Stellar wallet secured by your social account — no extension needed.",
+    "signedInAs": "Signed in as {name}"
   },
   "Home": {
     "heroTitle": "Decentralized validation for heart-driven causes.",
