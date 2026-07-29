@@ -8,7 +8,10 @@ import { Campaign, calculateFundingPercentage } from "@/types";
  * 3. Community verification boost (+20 points if verified)
  * 4. Recency bonus based on creation timestamp
  */
-export function calculateTrendingScore(campaign: Campaign, nowSec = Math.floor(Date.now() / 1000)): number {
+export function calculateTrendingScore(
+  campaign: Campaign,
+  nowSec = Math.floor(Date.now() / 1000),
+): number {
   if (campaign.is_cancelled || campaign.status === "cancelled") {
     return -1;
   }

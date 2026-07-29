@@ -26,9 +26,7 @@ export function formatCsvDate(timestampMs: number): string {
  * Generates CSV string data for contribution history items.
  * Acceptance criteria columns: Campaign, Amount (XLM), Status, Transaction Hash, Date
  */
-export function generateContributionHistoryCsv(
-  contributions: ContributionHistoryItem[],
-): string {
+export function generateContributionHistoryCsv(contributions: ContributionHistoryItem[]): string {
   const headers = ["Campaign", "Amount (XLM)", "Status", "Transaction Hash", "Date"];
 
   const rows: string[][] = [];
@@ -41,24 +39,12 @@ export function generateContributionHistoryCsv(
       for (const tx of item.transactions) {
         const amountXlm = stroopsToXlmNumber(item.contribution);
         const dateStr = formatCsvDate(tx.timestamp);
-        rows.push([
-          title,
-          amountXlm.toFixed(7).replace(/\.?0+$/, ""),
-          status,
-          tx.txHash,
-          dateStr,
-        ]);
+        rows.push([title, amountXlm.toFixed(7).replace(/\.?0+$/, ""), status, tx.txHash, dateStr]);
       }
     } else {
       const amountXlm = stroopsToXlmNumber(item.contribution);
       const dateStr = formatCsvDate(item.campaign.created_at * 1000);
-      rows.push([
-        title,
-        amountXlm.toFixed(7).replace(/\.?0+$/, ""),
-        status,
-        "N/A",
-        dateStr,
-      ]);
+      rows.push([title, amountXlm.toFixed(7).replace(/\.?0+$/, ""), status, "N/A", dateStr]);
     }
   }
 

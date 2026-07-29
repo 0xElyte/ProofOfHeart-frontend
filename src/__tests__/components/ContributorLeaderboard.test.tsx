@@ -1,6 +1,5 @@
 import { render, screen, fireEvent } from "@testing-library/react";
 import ContributorLeaderboard from "@/components/ContributorLeaderboard";
-import { setWalletAnonymous } from "@/lib/contributorLeaderboard";
 
 const mockUseTopContributors = jest.fn();
 

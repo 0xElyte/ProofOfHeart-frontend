@@ -1,13 +1,13 @@
 "use client";
 
 import { useCampaigns } from "@/hooks/useCampaigns";
-import { CATEGORY_LABELS } from "@/types";
+import { Category, CATEGORY_LABELS } from "@/types";
 import CauseCard from "./CauseCard";
 import { CauseCardSkeleton } from "./Skeleton";
 
 interface RelatedCampaignsProps {
   currentCampaignId: number;
-  category: string;
+  category: Category | string;
   userWalletAddress: string | null;
   onVote: (campaignId: number, voteType: "upvote" | "downvote") => Promise<void>;
   onCancel: (campaignId: number) => Promise<void>;
@@ -32,7 +32,10 @@ export default function RelatedCampaigns({
         aria-labelledby="related-causes-heading"
         className="mt-12 pt-8 border-t border-zinc-200 dark:border-zinc-700"
       >
-        <h2 id="related-causes-heading" className="text-xl font-bold text-zinc-900 dark:text-zinc-50 mb-6">
+        <h2
+          id="related-causes-heading"
+          className="text-xl font-bold text-zinc-900 dark:text-zinc-50 mb-6"
+        >
           Related Causes
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -48,9 +51,9 @@ export default function RelatedCampaigns({
     .filter(
       (c) =>
         c.id !== currentCampaignId &&
-        c.category === category &&
+        (c.category === category || String(c.category) === String(category)) &&
         c.status !== "cancelled" &&
-        !c.is_cancelled
+        !c.is_cancelled,
     )
     .slice(0, limit);
 
@@ -58,7 +61,10 @@ export default function RelatedCampaigns({
     return null;
   }
 
-  const categoryLabel = CATEGORY_LABELS?.[category] ?? category;
+  const categoryLabel =
+    typeof category === "number"
+      ? (CATEGORY_LABELS[category as Category] ?? String(category))
+      : (CATEGORY_LABELS[category as unknown as Category] ?? String(category));
 
   return (
     <section
@@ -67,7 +73,10 @@ export default function RelatedCampaigns({
     >
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h2 id="related-causes-heading" className="text-xl font-bold text-zinc-900 dark:text-zinc-50">
+          <h2
+            id="related-causes-heading"
+            className="text-xl font-bold text-zinc-900 dark:text-zinc-50"
+          >
             Related Causes
           </h2>
           <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">

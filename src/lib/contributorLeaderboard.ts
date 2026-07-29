@@ -111,7 +111,12 @@ const INITIAL_DEMO_CONTRIBUTORS: Record<
  */
 export function aggregateCampaignContributors(
   campaignId: number,
-  localTransactions: { walletAddress: string; campaignId: number; action: string; amount?: bigint }[] = [],
+  localTransactions: {
+    walletAddress: string;
+    campaignId: number;
+    action: string;
+    amount?: bigint;
+  }[] = [],
   limit = 5,
 ): ContributorLeaderboardItem[] {
   const totalsMap = new Map<string, bigint>();
@@ -140,7 +145,8 @@ export function aggregateCampaignContributors(
   const items: Omit<ContributorLeaderboardItem, "rank">[] = [];
   totalsMap.forEach((totalAmountStroops, walletAddress) => {
     if (totalAmountStroops > BigInt(0)) {
-      const isAnon = isWalletAnonymous(walletAddress) || anonOverrideMap.get(walletAddress) === true;
+      const isAnon =
+        isWalletAnonymous(walletAddress) || anonOverrideMap.get(walletAddress) === true;
       items.push({
         walletAddress,
         truncatedAddress: isAnon ? "Anonymous Supporter" : formatAddress(walletAddress),
