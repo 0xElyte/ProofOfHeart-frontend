@@ -6,7 +6,7 @@ import { notFound } from "next/navigation";
 import Image from "next/image";
 import { useState, useEffect } from "react";
 import dynamic from "next/dynamic";
-import UpdatesSection from "@/components/UpdatesSection";
+import CampaignTabs from "@/components/CampaignTabs";
 const RevenueSharingPanel = dynamic(() => import("@/components/RevenueSharingPanel"), {
   ssr: false,
 });
@@ -551,8 +551,8 @@ export default function CauseDetailClient({ id }: { id: string }) {
               </div>
             )}
 
-            {/* Updates Section */}
-            <UpdatesSection campaign={campaign} />
+            {/* Updates / Q&A tabs */}
+            <CampaignTabs campaign={campaign} />
           </div>
 
           <div className="space-y-6">
