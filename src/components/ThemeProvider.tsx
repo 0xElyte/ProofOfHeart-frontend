@@ -1,8 +1,14 @@
-'use client';
+"use client";
 
-import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useEffect, useState, ReactNode } from "react";
+import {
+  hasStoredTheme,
+  resolveInitialTheme,
+  writeStoredTheme,
+  type Theme,
+} from "@/lib/preferences";
 
-export type Theme = 'light' | 'dark';
+export type { Theme };
 
 interface ThemeContextType {
   theme: Theme;
@@ -13,38 +19,34 @@ interface ThemeContextType {
 export const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export const ThemeProvider = ({ children }: { children: ReactNode }) => {
-  const [theme, setThemeState] = useState<Theme>('light');
-  const [mounted, setMounted] = useState(false);
+  const [theme, setThemeState] = useState<Theme>("light");
   const [hasExplicitChoice, setHasExplicitChoice] = useState(false);
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    const stored = localStorage.getItem('theme');
-
-    if (stored === 'light' || stored === 'dark') {
-      setThemeState(stored);
-      setHasExplicitChoice(true);
-    } else {
-      const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-      setThemeState(systemDark ? 'dark' : 'light');
-    }
-
+    setThemeState(resolveInitialTheme());
+    setHasExplicitChoice(hasStoredTheme());
     setMounted(true);
   }, []);
 
-  useEffect(() => {
+  const useSafeLayoutEffect =
+    typeof window !== "undefined" ? React.useLayoutEffect : React.useEffect;
+
+  useSafeLayoutEffect(() => {
     if (!mounted) return;
-
     const root = window.document.documentElement;
-    if (theme === 'dark') {
-      root.classList.add('dark');
+    if (theme === "dark") {
+      root.classList.add("dark");
     } else {
-      root.classList.remove('dark');
+      root.classList.remove("dark");
     }
+  }, [theme, mounted]);
 
+  useEffect(() => {
     if (hasExplicitChoice) {
-      localStorage.setItem('theme', theme);
+      writeStoredTheme(theme);
     }
-  }, [theme, mounted, hasExplicitChoice]);
+  }, [theme, hasExplicitChoice]);
 
   const setTheme = (nextTheme: Theme) => {
     setThemeState(nextTheme);
@@ -52,7 +54,7 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const toggleTheme = () => {
-    setTheme(theme === 'light' ? 'dark' : 'light');
+    setTheme(theme === "light" ? "dark" : "light");
   };
 
   return (
@@ -64,6 +66,6 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
 
 export const useTheme = () => {
   const ctx = useContext(ThemeContext);
-  if (!ctx) throw new Error('useTheme must be used within a ThemeProvider');
+  if (!ctx) throw new Error("useTheme must be used within a ThemeProvider");
   return ctx;
 };

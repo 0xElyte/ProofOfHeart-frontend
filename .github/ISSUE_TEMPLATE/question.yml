@@ -3,6 +3,10 @@ description: Ask a question or seek clarification
 title: "[Question]: "
 labels: ["question"]
 body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for asking. For implementation work, please review `CONTRIBUTING.md` and link the related issue from your PR.
   - type: textarea
     id: question
     attributes:
@@ -15,6 +19,8 @@ body:
     attributes:
       label: Context
       description: Provide any relevant context for your question
+    validations:
+      required: true
   - type: input
     id: version
     attributes:

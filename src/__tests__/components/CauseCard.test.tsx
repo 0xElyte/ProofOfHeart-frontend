@@ -37,6 +37,16 @@ jest.mock("@/components/DeadlineCountdown", () => ({
   default: () => <span data-testid="deadline-countdown" />,
 }));
 
+jest.mock("@/hooks/useSavedCampaigns", () => ({
+  useSavedCampaigns: () => ({ isSaved: () => false, toggleSaved: jest.fn(), savedIds: [] }),
+}));
+
+jest.mock("@/components/ToastProvider", () => ({
+  useToast: () => ({
+    showError: jest.fn(),
+  }),
+}));
+
 jest.mock("@/components/cancelCampaignModal", () => ({
   __esModule: true,
   default: ({
@@ -324,6 +334,15 @@ describe("category label", () => {
 // ── Static content ────────────────────────────────────────────────────────────
 
 describe("static card content", () => {
+  it("keeps card dimensions stable during hover", () => {
+    const { container } = renderCard(makeCampaign());
+    const card = container.firstElementChild;
+
+    expect(card).toHaveClass("flex");
+    expect(card?.className).toContain("hover:motion-safe:-translate-y-0.5");
+    expect(card?.className).not.toContain("hover:shadow");
+  });
+
   it("renders the campaign title", () => {
     renderCard(makeCampaign({ title: "My Great Cause" }));
     expect(screen.getByText("My Great Cause")).toBeInTheDocument();

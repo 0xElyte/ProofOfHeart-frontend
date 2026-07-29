@@ -1,10 +1,15 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
-import { contribute } from "../lib/contractClient";
-import { Campaign, xlmToStroops, stroopsToXlm } from "../types";
+import { useState, useEffect, useRef, useMemo } from "react";
+import { useTranslations, useLocale } from "next-intl";
+import { contribute, getCampaign } from "../lib/contractClient";
+import { getEstimatedContributeNetworkFeeXlm } from "../lib/networkFee";
+import { Campaign, basisPointsToPercentage } from "../types";
+import { xlmToStroops, stroopsToXlmNumber } from "@/lib/stellarAmount";
+import { formatAmount } from "@/lib/formatters";
 import { useToast } from "./ToastProvider";
 import { useWallet } from "./WalletContext";
+import { usePlatformFee } from "../hooks/usePlatformFee";
 import { parseContractError } from "../utils/contractErrors";
 import {
   INTERVAL_LABELS,
@@ -14,18 +19,50 @@ import {
 
 const EXPLORER_BASE =
   process.env.NEXT_PUBLIC_EXPLORER_URL ?? "https://stellar.expert/explorer/testnet/tx";
+import { type TransactionLifecyclePhase } from "../lib/contractClient";
+import { validateContributorNotCreator } from "../utils/validators";
+import { explorerTxUrl } from "../utils/explorer";
+import {
+  trackClickContribute,
+  trackEnterAmount,
+  trackReviewContribution,
+  trackSignTransaction,
+  trackContributionConfirmed,
+  trackContributionError,
+} from "../lib/analytics";
 
 interface DonationModalProps {
   campaign: Campaign;
   onClose: () => void;
   onSuccess: () => void;
+  onRefetch?: () => void;
 }
 
 type Step = "input" | "pending" | "confirmed";
 
-export default function DonationModal({ campaign, onClose, onSuccess }: DonationModalProps) {
+type DonationValidationKey =
+  | "scientificNotation"
+  | "invalidNumber"
+  | "invalidAmount"
+  | "amountMustBePositive"
+  | "invalidNumberFormat"
+  | "maxDecimalPlaces"
+  | "amountExceedsRemainingGoal"
+  | "campaignAlreadyFunded";
+
+export default function DonationModal({
+  campaign,
+  onClose,
+  onSuccess,
+  onRefetch,
+}: DonationModalProps) {
+  const t = useTranslations("Donation");
+  const tModal = useTranslations("DonationModal");
+  const tContractErrors = useTranslations("ContractErrors");
   const { publicKey } = useWallet();
   const { showError } = useToast();
+  const { platformFeeBps } = usePlatformFee();
+  const estimatedNetworkFeeXlm = useMemo(() => getEstimatedContributeNetworkFeeXlm(), []);
 
   const [amount, setAmount] = useState("");
   const [step, setStep] = useState<Step>("input");
@@ -33,19 +70,58 @@ export default function DonationModal({ campaign, onClose, onSuccess }: Donation
   const [error, setError] = useState<string | null>(null);
   const [isRecurring, setIsRecurring] = useState(false);
   const [recurringInterval, setRecurringInterval] = useState<RecurringInterval>("monthly");
+  const [txPhase, setTxPhase] = useState<TransactionLifecyclePhase | null>(null);
 
   const dialogRef = useRef<HTMLDivElement>(null);
   const previousFocusRef = useRef<HTMLElement | null>(null);
+
+  const [liveCampaign, setLiveCampaign] = useState<Campaign>(campaign);
+
+  useEffect(() => {
+    setLiveCampaign(campaign);
+  }, [campaign]);
+
+  useEffect(() => {
+    let active = true;
+    const poll = async () => {
+      try {
+        const updated = await getCampaign(campaign.id);
+        if (active && updated) {
+          setLiveCampaign(updated);
+        }
+      } catch {
+        // ignore polling errors
+      }
+    };
+
+    poll();
+    const interval = setInterval(poll, 2000);
+    return () => {
+      active = false;
+      clearInterval(interval);
+    };
+  }, [campaign.id]);
+
+  const localizeContractError = (message: string) =>
+    message.startsWith("ContractErrors.") ? tContractErrors(message) : message;
+
+  const formatError = (message: string) =>
+    message.startsWith("ContractErrors.")
+      ? localizeContractError(message)
+      : tModal(message as DonationValidationKey);
 
   // Body scroll lock + focus restoration
   useEffect(() => {
     previousFocusRef.current = document.activeElement as HTMLElement;
     document.body.style.overflow = "hidden";
+
+    trackClickContribute(campaign.id);
+
     return () => {
       document.body.style.overflow = "";
       previousFocusRef.current?.focus();
     };
-  }, []);
+  }, [campaign.id]);
 
   // ESC to close + focus trap
   useEffect(() => {
@@ -57,8 +133,8 @@ export default function DonationModal({ campaign, onClose, onSuccess }: Donation
       if (e.key === "Tab" && dialogRef.current) {
         const focusable = Array.from(
           dialogRef.current.querySelectorAll<HTMLElement>(
-            'button:not([disabled]), input:not([disabled]), a[href], [tabindex]:not([tabindex="-1"])'
-          )
+            'button:not([disabled]), input:not([disabled]), a[href], [tabindex]:not([tabindex="-1"])',
+          ),
         );
         if (focusable.length === 0) return;
         const first = focusable[0];
@@ -80,21 +156,107 @@ export default function DonationModal({ campaign, onClose, onSuccess }: Donation
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, [step, onClose]);
 
-  const goal = stroopsToXlm(campaign.funding_goal);
-  const raised = stroopsToXlm(campaign.amount_raised);
-  const amountNum = parseFloat(amount) || 0;
+  // Poll live funding data while the user is filling in the amount so the
+  // progress bar reflects concurrent donations from other users.
+  useEffect(() => {
+    if (!onRefetch || step !== "input") return;
+    const id = setInterval(onRefetch, 10_000);
+    return () => clearInterval(id);
+  }, [onRefetch, step]);
+
+  const locale = useLocale();
+  const goal = stroopsToXlmNumber(liveCampaign.funding_goal);
+  const raised = stroopsToXlmNumber(liveCampaign.amount_raised);
+
+  const validateAmount = (
+    value: string,
+  ): { valid: boolean; errorKey?: DonationValidationKey; amount?: number } => {
+    const trimmed = value.trim();
+
+    if (!trimmed) {
+      return { valid: false };
+    }
+
+    if (/[eE]/.test(trimmed)) {
+      return { valid: false, errorKey: "scientificNotation" };
+    }
+
+    const parsed = parseFloat(trimmed);
+
+    if (isNaN(parsed)) {
+      return { valid: false, errorKey: "invalidNumber" };
+    }
+
+    if (!isFinite(parsed)) {
+      return { valid: false, errorKey: "invalidAmount" };
+    }
+
+    if (parsed <= 0) {
+      return { valid: false, errorKey: "amountMustBePositive" };
+    }
+
+    const parts = trimmed.split(".");
+    if (parts.length > 2) {
+      return { valid: false, errorKey: "invalidNumberFormat" };
+    }
+    if (parts[1] && parts[1].length > 7) {
+      return { valid: false, errorKey: "maxDecimalPlaces" };
+    }
+
+    const remainingGoal = Math.max(0, goal - raised);
+    if (remainingGoal === 0) {
+      return { valid: false, errorKey: "campaignAlreadyFunded" };
+    }
+
+    if (parsed > remainingGoal) {
+      return { valid: false, errorKey: "amountExceedsRemainingGoal" };
+    }
+
+    return { valid: true, amount: parsed };
+  };
+
+  const validation = validateAmount(amount);
+  const isFullyFunded = raised >= goal;
+  const amountError =
+    error ||
+    (isFullyFunded
+      ? "campaignAlreadyFunded"
+      : amount.trim() && !validation.valid
+        ? validation.errorKey || "Please enter a valid amount."
+        : null);
+  const amountNum = validation.amount || 0;
   const newRaised = raised + amountNum;
   const newPct = goal > 0 ? Math.min(100, Math.round((newRaised / goal) * 100)) : 0;
   const currentPct = goal > 0 ? Math.min(100, Math.round((raised / goal) * 100)) : 0;
+  const totalWalletCost =
+    amountNum > 0 ? amountNum + estimatedNetworkFeeXlm : estimatedNetworkFeeXlm;
 
   const handleDonate = async () => {
     if (!publicKey) return;
-    if (amountNum <= 0) {
-      setError("Please enter a valid amount.");
+
+    try {
+      validateContributorNotCreator(publicKey, campaign.creator);
+    } catch (err) {
+      const msg = parseContractError(err);
+      setError(msg);
+      trackContributionError(campaign.id, "contributor_is_creator");
       return;
     }
+
+    const amountValidation = validateAmount(amount);
+    if (!amountValidation.valid) {
+      setError(amountValidation.errorKey ?? "invalidAmount");
+      trackContributionError(campaign.id, "invalid_amount");
+      return;
+    }
+
+    const amountToSend = amount;
     setError(null);
     setStep("pending");
+    setTxPhase(null);
+
+    trackReviewContribution(campaign.id);
+
     try {
       const stroops = xlmToStroops(amountNum);
       const hash = await contribute(campaign.id, publicKey, stroops);
@@ -111,14 +273,33 @@ export default function DonationModal({ campaign, onClose, onSuccess }: Donation
         });
       }
 
+      const stroops = xlmToStroops(amountToSend);
+      const hash = await contribute(campaign.id, publicKey, stroops, {
+        onStatus: ({ phase }) => {
+          setTxPhase(phase);
+          if (phase === "signing") {
+            trackSignTransaction(campaign.id);
+          }
+        },
+      });
       setTxHash(hash);
       setStep("confirmed");
+      trackContributionConfirmed(campaign.id);
       onSuccess();
     } catch (err) {
       const msg = parseContractError(err);
-      showError(msg);
+      const localized = localizeContractError(msg);
+      showError(localized);
       setError(msg);
       setStep("input");
+      setTxPhase(null);
+
+      const errorType = msg.toLowerCase().includes("rejected")
+        ? "user_rejected"
+        : msg.toLowerCase().includes("insufficient")
+          ? "insufficient_funds"
+          : "transaction_failed";
+      trackContributionError(campaign.id, errorType);
     }
   };
 
@@ -128,7 +309,7 @@ export default function DonationModal({ campaign, onClose, onSuccess }: Donation
       role="presentation"
       onClick={(e) => e.target === e.currentTarget && step !== "pending" && onClose()}
       onKeyDown={(e) => {
-        if (e.key === 'Escape' && step !== "pending") {
+        if (e.key === "Escape" && step !== "pending") {
           onClose();
         }
       }}
@@ -140,15 +321,17 @@ export default function DonationModal({ campaign, onClose, onSuccess }: Donation
         aria-labelledby="donation-modal-title"
         className="bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl w-full max-w-md border border-zinc-200 dark:border-zinc-700 overflow-hidden"
       >
-        {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-zinc-200 dark:border-zinc-700">
-          <h2 id="donation-modal-title" className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
-            {step === "confirmed" ? "Donation Confirmed" : "Fund This Cause"}
+          <h2
+            id="donation-modal-title"
+            className="text-lg font-semibold text-zinc-900 dark:text-zinc-50"
+          >
+            {step === "confirmed" ? t("confirmedTitle") : t("title")}
           </h2>
           {step !== "pending" && (
             <button
               onClick={onClose}
-              aria-label="Close"
+              aria-label={t("closeAriaLabel")}
               className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 transition-colors text-2xl leading-none"
             >
               ×
@@ -157,16 +340,14 @@ export default function DonationModal({ campaign, onClose, onSuccess }: Donation
         </div>
 
         <div className="px-6 py-5 space-y-5">
-          {/* Campaign title */}
           <p className="text-sm text-zinc-500 dark:text-zinc-400 line-clamp-2">{campaign.title}</p>
 
-          {/* Current progress */}
           <div>
             <div className="flex justify-between text-xs text-zinc-500 dark:text-zinc-400 mb-1">
-              <span>{currentPct}% funded</span>
+              <span>{t("percentFunded", { percent: currentPct })}</span>
               <span>
-                {raised.toLocaleString(undefined, { maximumFractionDigits: 2 })} /{" "}
-                {goal.toLocaleString(undefined, { maximumFractionDigits: 2 })} XLM
+                {formatAmount(liveCampaign.amount_raised, locale, { maximumFractionDigits: 2 })} /{" "}
+                {formatAmount(liveCampaign.funding_goal, locale, { maximumFractionDigits: 2 })} XLM
               </span>
             </div>
             <div className="w-full bg-zinc-200 dark:bg-zinc-700 rounded-full h-2">
@@ -177,7 +358,6 @@ export default function DonationModal({ campaign, onClose, onSuccess }: Donation
             </div>
           </div>
 
-          {/* Input step */}
           {step === "input" && (
             <>
               <div>
@@ -185,7 +365,7 @@ export default function DonationModal({ campaign, onClose, onSuccess }: Donation
                   htmlFor="donation-amount"
                   className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1"
                 >
-                  Amount (XLM)
+                  {t("amountLabel")}
                 </label>
                 <div className="relative">
                   <input
@@ -194,27 +374,36 @@ export default function DonationModal({ campaign, onClose, onSuccess }: Donation
                     min="0.0000001"
                     step="any"
                     value={amount}
+                    aria-describedby={amountError ? "donation-amount-error" : undefined}
+                    aria-invalid={amountError ? "true" : "false"}
+                    disabled={isFullyFunded}
                     onChange={(e) => {
                       setAmount(e.target.value);
                       setError(null);
+                      if (e.target.value && parseFloat(e.target.value) > 0) {
+                        trackEnterAmount(campaign.id);
+                      }
                     }}
-                    placeholder="e.g. 10"
-                    className="w-full px-4 py-3 pr-16 rounded-xl border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-50 focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
+                    placeholder={t("amountPlaceholder")}
+                    className="w-full px-4 py-3 pr-16 rounded-xl border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-50 focus:outline-none focus:ring-2 focus:ring-blue-500 transition disabled:opacity-50 disabled:cursor-not-allowed"
                   />
                   <span className="absolute right-4 top-1/2 -translate-y-1/2 text-sm font-medium text-zinc-400">
                     XLM
                   </span>
                 </div>
-                {error && <p className="mt-1 text-xs text-red-500">{error}</p>}
+                {amountError && (
+                  <p id="donation-amount-error" role="alert" className="mt-1 text-xs text-red-500">
+                    {formatError(amountError)}
+                  </p>
+                )}
               </div>
 
-              {/* Preview progress if amount entered */}
               {amountNum > 0 && (
                 <div className="rounded-xl bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 px-4 py-3 text-sm text-blue-700 dark:text-blue-300">
-                  After your donation: {newPct}% funded
+                  {t("afterDonation", { percent: newPct })}
                   {newRaised >= goal && (
                     <span className="ml-2 font-semibold text-green-600 dark:text-green-400">
-                      🎉 Goal reached!
+                      🎉 {t("goalReached")}
                     </span>
                   )}
                 </div>
@@ -263,28 +452,64 @@ export default function DonationModal({ campaign, onClose, onSuccess }: Donation
                   </div>
                 )}
               </div>
+              {amountNum > 0 && (
+                <dl className="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/50 px-4 py-3 text-sm space-y-2">
+                  <div className="flex justify-between gap-4">
+                    <dt className="text-zinc-600 dark:text-zinc-400">{t("contributionLine")}</dt>
+                    <dd className="font-medium text-zinc-900 dark:text-zinc-50 tabular-nums">
+                      {amountNum.toLocaleString(undefined, { maximumFractionDigits: 7 })} XLM
+                    </dd>
+                  </div>
+                  <div className="flex justify-between gap-4">
+                    <dt className="text-zinc-600 dark:text-zinc-400">{t("networkFeeLine")}</dt>
+                    <dd className="font-medium text-zinc-900 dark:text-zinc-50 tabular-nums">
+                      {estimatedNetworkFeeXlm.toLocaleString(undefined, {
+                        maximumFractionDigits: 7,
+                      })}{" "}
+                      XLM
+                    </dd>
+                  </div>
+                  <div className="flex justify-between gap-4 border-t border-zinc-200 dark:border-zinc-600 pt-2">
+                    <dt className="font-semibold text-zinc-900 dark:text-zinc-50">
+                      {t("totalLine")}
+                    </dt>
+                    <dd className="font-semibold text-zinc-900 dark:text-zinc-50 tabular-nums">
+                      {totalWalletCost.toLocaleString(undefined, { maximumFractionDigits: 7 })} XLM
+                    </dd>
+                  </div>
+                </dl>
+              )}
+
+              <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                {t("platformFeeNote", { feePercent: basisPointsToPercentage(platformFeeBps) })}
+              </p>
+              {amountNum > 0 && (
+                <p className="text-xs text-zinc-500 dark:text-zinc-400">{t("networkFeeNote")}</p>
+              )}
 
               <button
                 onClick={handleDonate}
-                disabled={!publicKey || amountNum <= 0}
+                disabled={!publicKey || !validation.valid}
                 className="w-full py-3 bg-linear-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold rounded-xl transition-all duration-200"
               >
-                Donate {amountNum > 0 ? `${amountNum} XLM` : ""}
+                {amountNum > 0 ? t("donateAmount", { amount: amountNum }) : t("donate")}
               </button>
             </>
           )}
 
-          {/* Pending step */}
           {step === "pending" && (
             <div className="flex flex-col items-center gap-4 py-6">
               <div className="w-12 h-12 rounded-full border-4 border-blue-500 border-t-transparent motion-safe:animate-spin" />
               <p className="text-zinc-600 dark:text-zinc-400 text-sm text-center">
-                Waiting for Freighter signature and transaction confirmation…
+                {txPhase === "signing"
+                  ? t("waitingSignature")
+                  : txPhase === "confirming"
+                    ? t("waitingConfirmation")
+                    : t("submitting")}
               </p>
             </div>
           )}
 
-          {/* Confirmed step */}
           {step === "confirmed" && (
             <div className="flex flex-col items-center gap-4 py-4 text-center">
               <div className="w-14 h-14 rounded-full bg-green-100 dark:bg-green-900 flex items-center justify-center text-3xl">
@@ -292,10 +517,7 @@ export default function DonationModal({ campaign, onClose, onSuccess }: Donation
               </div>
               <div>
                 <p className="font-semibold text-zinc-900 dark:text-zinc-50">
-                  {amountNum} XLM donated successfully
-                </p>
-                <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">
-                  Thank you for supporting this cause.
+                  {t("donatedSuccess", { amount: amountNum })}
                 </p>
                 {isRecurring && (
                   <p className="text-sm text-blue-600 dark:text-blue-400 mt-2">
@@ -303,22 +525,23 @@ export default function DonationModal({ campaign, onClose, onSuccess }: Donation
                     next one is due.
                   </p>
                 )}
+                <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">{t("thankYou")}</p>
               </div>
               {txHash && (
                 <a
-                  href={`${EXPLORER_BASE}/${txHash}`}
+                  href={explorerTxUrl(txHash)}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-sm text-blue-600 dark:text-blue-400 underline underline-offset-2 hover:text-blue-800 dark:hover:text-blue-200 transition-colors"
                 >
-                  View on Stellar Explorer →
+                  {t("viewExplorer")}
                 </a>
               )}
               <button
                 onClick={onClose}
                 className="w-full py-3 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-300 font-medium rounded-xl transition-colors"
               >
-                Close
+                {t("close")}
               </button>
             </div>
           )}

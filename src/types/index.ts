@@ -23,10 +23,49 @@ export const CATEGORY_LABELS: Record<Category, string> = {
 
 export type CampaignStatus = "active" | "cancelled" | "funded" | "failed" | "verified";
 
+/**
+ * Raw on-chain fields used to derive CampaignStatus.
+ * Matches the boolean flags the Soroban contract actually stores.
+ */
+export interface RawCampaignFlags {
+  is_cancelled: boolean;
+  is_verified: boolean;
+  is_active: boolean;
+  funds_withdrawn: boolean;
+  deadline: number; // Unix timestamp seconds
+  amount_raised: bigint;
+  funding_goal: bigint;
+}
+
+/**
+ * Single canonical status derivation used by every view.
+ * Priority: cancelled > funded > failed > verified > active
+ */
+export function deriveStatus(flags: RawCampaignFlags): CampaignStatus {
+  if (flags.is_cancelled) return "cancelled";
+  if (flags.funds_withdrawn) return "funded";
+  const now = Math.floor(Date.now() / 1000);
+  if (!flags.is_active && flags.deadline < now && flags.amount_raised < flags.funding_goal) {
+    return "failed";
+  }
+  if (flags.is_verified) return "verified";
+  return "active";
+}
+
 // ---------------------------------------------------------------------------
 // Campaign interface — mirrors the on-chain Campaign struct
 // ---------------------------------------------------------------------------
 
+export interface Milestone {
+  targetAmount: bigint;
+  description: string;
+}
+
+export interface SocialLinks {
+  twitter?: string;
+  linkedin?: string;
+  farcaster?: string;
+}
 export interface Campaign {
   id: number;
   creator: string;
@@ -45,6 +84,11 @@ export interface Campaign {
   has_revenue_sharing: boolean;
   revenue_share_percentage: number; // basis points (e.g. 300 = 3%)
   tags?: string[];
+  cover_image_url?: string;
+  milestones?: Milestone[];
+  latitude?: number;
+  longitude?: number;
+  social_links?: SocialLinks;
 }
 
 // ---------------------------------------------------------------------------
@@ -79,33 +123,21 @@ export enum ContractErrorCode {
 
 /**
  * Derive the campaign lifecycle status from its boolean flags + deadline.
+ * Delegates to deriveStatus so all views use a single derivation path.
  */
 export function deriveCampaignStatus(campaign: Campaign): CampaignStatus {
-  if (campaign.is_cancelled) return "cancelled";
-  if (campaign.funds_withdrawn) return "funded";
-  if (
-    !campaign.is_active &&
-    campaign.deadline < Math.floor(Date.now() / 1000) &&
-    campaign.amount_raised < campaign.funding_goal
-  ) {
-    return "failed";
-  }
-  if (campaign.is_active) return "active";
-  return "active"; // fallback
+  return deriveStatus(campaign);
 }
 
 /**
- * Convert stroops (i128) to a floating-point XLM number for display purposes.
+ * Calculate funding percentage using bigint arithmetic to avoid precision loss.
+ * Returns a number between 0 and 100.
  */
-export function stroopsToXlm(stroops: bigint): number {
-  return Number(stroops) / 10_000_000;
-}
-
-/**
- * Convert an XLM number to stroops (bigint) for contract calls.
- */
-export function xlmToStroops(xlm: number): bigint {
-  return BigInt(Math.round(xlm * 10_000_000));
+export function calculateFundingPercentage(amountRaised: bigint, fundingGoal: bigint): number {
+  if (fundingGoal <= BigInt(0)) return 0;
+  // Use bigint arithmetic: (amountRaised * 100) / fundingGoal
+  const percentage = (amountRaised * BigInt(100)) / fundingGoal;
+  return Math.min(100, Number(percentage));
 }
 
 /**
