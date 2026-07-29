@@ -17,6 +17,8 @@ const DonationModal = dynamic(() => import("@/components/DonationModal"), { ssr:
 import CampaignStatusBadge from "@/components/CampaignStatusBadge";
 import DeadlineCountdown from "@/components/DeadlineCountdown";
 import FundingProgressBar from "@/components/FundingProgressBar";
+import ContributorLeaderboard from "@/components/ContributorLeaderboard";
+import RelatedCampaigns from "@/components/RelatedCampaigns";
 import ShareButtons from "@/components/ShareButtons";
 import SafeMarkdown from "@/components/SafeMarkdown";
 import ReportModal from "@/components/ReportModal";
@@ -38,6 +40,7 @@ import {
   verifyCampaignWithVotes,
   getContribution,
   claimRefund,
+  cancelCampaign,
 } from "@/lib/contractClient";
 import { useTranslations, useLocale } from "next-intl";
 import { CauseDetailSkeleton } from "@/components/Skeleton";
@@ -203,11 +206,25 @@ export default function CauseDetailClient({ id }: { id: string }) {
     }
   };
 
-  const handleClaimRefund = async () => {
-    if (!userWalletAddress || !campaign) return;
+  const handleCancel = async (campaignId: number) => {
+    if (!userWalletAddress) {
+      showWarning("Please connect your wallet first.");
+      return;
+    }
+    try {
+      await withActionTimeout(cancelCampaign(campaignId));
+      showSuccess("Campaign cancelled. Contributors can now claim full refunds.");
+      refetch();
+    } catch (error) {
+      showError(getAsyncActionErrorMessage(error, parseContractError));
+    }
+  };
+
+  const handleClaimRefundForId = async (campaignId: number) => {
+    if (!userWalletAddress) return;
     setIsClaimingRefund(true);
     try {
-      const txHash = await withActionTimeout(claimRefund(campaign.id, userWalletAddress));
+      const txHash = await withActionTimeout(claimRefund(campaignId, userWalletAddress));
       setRefundTxHash(txHash);
       setRefundableAmount(BigInt(0));
       showSuccess("Refund claimed successfully!");
@@ -222,6 +239,11 @@ export default function CauseDetailClient({ id }: { id: string }) {
     } finally {
       setIsClaimingRefund(false);
     }
+  };
+
+  const handleClaimRefund = async () => {
+    if (!campaign) return;
+    await handleClaimRefundForId(campaign.id);
   };
 
   if (isLoading) {
@@ -608,6 +630,11 @@ export default function CauseDetailClient({ id }: { id: string }) {
               </div>
             </div>
 
+            <ContributorLeaderboard
+              campaignId={campaign.id}
+              userWalletAddress={userWalletAddress}
+            />
+
             <div className="bg-white dark:bg-zinc-800 rounded-xl shadow-sm border border-zinc-200 dark:border-zinc-700 p-5">
               <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50 mb-3">
                 Vote Breakdown
@@ -642,6 +669,15 @@ export default function CauseDetailClient({ id }: { id: string }) {
             </Link>
           </div>
         </div>
+
+        <RelatedCampaigns
+          currentCampaignId={campaign.id}
+          category={campaign.category}
+          userWalletAddress={userWalletAddress}
+          onVote={handleVote}
+          onCancel={handleCancel}
+          onClaimRefund={handleClaimRefundForId}
+        />
       </main>
 
       {isDonationModalOpen && (
