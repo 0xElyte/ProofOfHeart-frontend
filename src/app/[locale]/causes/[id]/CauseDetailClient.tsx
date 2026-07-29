@@ -23,6 +23,7 @@ import ShareButtons from "@/components/ShareButtons";
 import SafeMarkdown from "@/components/SafeMarkdown";
 import ReportModal from "@/components/ReportModal";
 import CampaignActions from "@/components/CampaignActions";
+import PersonalCap from "@/components/PersonalCap";
 import AsyncButtonContent from "@/components/AsyncButtonContent";
 import { useToast } from "@/components/ToastProvider";
 import VotingComponent from "@/components/VotingComponent";
@@ -589,6 +590,8 @@ export default function CauseDetailClient({ id }: { id: string }) {
             <CampaignActions campaign={campaign} onActionSuccess={refetch} />
 
             <VestingReservePanel campaign={campaign} onActionSuccess={refetch} />
+
+            <PersonalCap campaignId={campaign.id} />
 
             <div className="bg-white dark:bg-zinc-800 rounded-xl shadow-sm border border-zinc-200 dark:border-zinc-700 p-5">
               <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50 mb-3">

@@ -577,6 +577,24 @@ export async function getContribution(campaignId: number, contributor: string): 
   }
 }
 
+/**
+ * Fetch the personal contribution cap for a contributor on a specific campaign.
+ * Returns the cap in stroops, or 0 if no cap is set (unlimited).
+ */
+export async function getPersonalCap(campaignId: number, contributor: string): Promise<bigint> {
+  if (USE_MOCKS) return BigInt(0);
+  try {
+    const result = await invokeViewMethod("get_personal_cap", [
+      StellarSdk.nativeToScVal(campaignId, { type: "u32" }),
+      new StellarSdk.Address(contributor).toScVal(),
+    ]);
+    if (!result) return BigInt(0);
+    return StellarSdk.scValToBigInt(result);
+  } catch (err) {
+    throw new Error(parseContractError(err));
+  }
+}
+
 export async function getRevenuePool(campaignId: number): Promise<bigint> {
   if (USE_MOCKS) return BigInt(0);
   try {
@@ -1108,6 +1126,52 @@ export async function getApprovalThresholdBps(): Promise<number> {
  * Cast a vote on a campaign via Freighter wallet.
  * approve = true → upvote, approve = false → downvote.
  */
+/**
+ * Set or update a personal contribution cap for a campaign.
+ * Pass BigInt(0) to remove the cap (unlimited).
+ * Returns the transaction hash on success.
+ */
+export async function setPersonalCap(
+  campaignId: number,
+  contributor: string,
+  capAmount: bigint,
+  options?: TransactionLifecycleOptions,
+): Promise<string> {
+  validateStellarAddress(contributor);
+
+  if (USE_MOCKS) return emitMockLifecycle("mock_tx_set_personal_cap", options);
+  const contract = new StellarSdk.Contract(CONTRACT_ADDRESS);
+  const op = contract.call(
+    "set_personal_cap",
+    StellarSdk.nativeToScVal(campaignId, { type: "u32" }),
+    new StellarSdk.Address(contributor).toScVal(),
+    StellarSdk.nativeToScVal(capAmount, { type: "i128" }),
+  );
+  try {
+    const txResult = await buildAndSubmitTransaction(contributor, op, {
+      ...options,
+      operation: "set_personal_cap",
+    });
+    appendWalletTransaction({
+      walletAddress: contributor,
+      campaignId,
+      action: "set_personal_cap",
+      txHash: txResult.txHash,
+    });
+    return txResult.txHash;
+  } catch (err) {
+    const error = err instanceof Error ? err : new Error(String(err));
+    const errorCode = getContractErrorCode(err);
+    captureTransactionError(
+      "set_personal_cap",
+      campaignId,
+      error,
+      errorCode ? String(errorCode) : undefined,
+    );
+    throw new Error(parseContractError(err));
+  }
+}
+
 export async function voteOnCampaign(
   campaignId: number,
   voter: string,
