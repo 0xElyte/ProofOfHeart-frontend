@@ -1,7 +1,7 @@
 "use client";
 import * as StellarSdk from "@stellar/stellar-sdk";
 import { getAddress, getNetwork, isConnected, isAllowed } from "@stellar/freighter-api";
-import React, { createContext, useContext, useEffect, useState, ReactNode, useRef } from "react";
+import React, { createContext, useContext, useEffect, useState, useMemo, ReactNode, useRef } from "react";
 import { useToast } from "./ToastProvider";
 import { useQueryClient } from "@tanstack/react-query";
 import { IS_MOCK_MODE } from "@/lib/runtimeEnv";
@@ -357,21 +357,20 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
     );
   };
 
+  const contextValue = useMemo(
+    () => ({
+      publicKey,
+      isWalletConnected,
+      walletNetworkWarning,
+      connectWallet,
+      disconnectWallet,
+      isLoading,
+    }),
+    [publicKey, isWalletConnected, walletNetworkWarning, isLoading]
+  );
+
   return (
-    <WalletContext.Provider
-      value={{
-        publicKey,
-        isWalletConnected,
-        walletNetworkWarning,
-        connectWallet,
-        disconnectWallet,
-        isLoading,
-        walletKind,
-        socialProfile,
-        isSocialLoginAvailable: isSocialLoginConfigured(),
-        connectWithSocial,
-      }}
-    >
+    <WalletContext.Provider value={contextValue}>
       {children}
       <InstallFreighterModal
         isOpen={showInstallPrompt}

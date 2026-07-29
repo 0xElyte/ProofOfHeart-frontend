@@ -45,7 +45,10 @@
     "fundingHistory": "Funding/Donation History",
     "noFundingHistory": "No funding/donation activity yet.",
     "donated": "Donated {amount} XLM on {date}",
-    "campaignFallback": "Campaign #{id}"
+    "campaignFallback": "Campaign #{id}",
+    "withdrawalsTab": "Withdrawals",
+    "withdrawalsHeading": "Multi-Signature Withdrawals",
+    "withdrawalsDescription": "Campaigns you run. Once a campaign reaches its goal you can propose a withdrawal and collect approvals from your organization's signers before the funds move."
   },
   "MyContributions": {
     "title": "My Contributions",
