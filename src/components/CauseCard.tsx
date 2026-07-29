@@ -1,8 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { memo, useState } from 'react';
 import { formatAddress } from '@/lib/formatAddress';
 import { Campaign, Vote, CATEGORY_LABELS } from '../types';
+import CampaignDescription from './CampaignDescription';
 import CampaignStatusBadge from './CampaignStatusBadge';
 import CancelCampaignModal from './cancelCampaignModal';
 import DeadlineCountdown from './DeadlineCountdown';
@@ -34,7 +35,7 @@ function formatDate(ts: number) {
 }
 
 
-export default function CauseCard({
+function CauseCard({
   campaign,
   userWalletAddress,
   onVote,
@@ -119,9 +120,7 @@ export default function CauseCard({
         </h3>
 
         {/* Description */}
-        <p className="text-sm text-zinc-600 dark:text-zinc-400 line-clamp-3 leading-relaxed">
-          {campaign.description}
-        </p>
+        <CampaignDescription description={campaign.description} />
 
         {/* Tags */}
         {campaign.tags && campaign.tags.length > 0 && (
@@ -245,3 +244,10 @@ export default function CauseCard({
     </div>
   );
 }
+
+/**
+ * Memoized so a list of cards does not re-render wholesale when unrelated
+ * global state changes (#648). Cards are rendered in long lists, so this is
+ * where an unnecessary render is most expensive.
+ */
+export default memo(CauseCard);

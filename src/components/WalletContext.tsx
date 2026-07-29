@@ -1,17 +1,43 @@
 "use client";
 import { getAddress, isConnected, isAllowed } from "@stellar/freighter-api";
-import React, { createContext, useContext, useEffect, useState, ReactNode } from "react";
+import React, {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+  ReactNode,
+} from "react";
 import { useToast } from "./ToastProvider";
 
-interface WalletContextType {
+/**
+ * Wallet state is split from wallet actions (#648).
+ *
+ * Previously one context held both, so every `isLoading` flip re-rendered each
+ * consumer — including components that only ever call `connectWallet` and never
+ * read state. Splitting means:
+ *
+ *   - `useWalletState()`   re-renders when publicKey / connected / loading change
+ *   - `useWalletActions()` never re-renders: the value is created once
+ *
+ * Both values are memoized, so a re-render of `WalletProvider` itself does not
+ * cascade into consumers unless the data they read actually changed.
+ */
+
+interface WalletState {
   publicKey: string | null;
   isWalletConnected: boolean;
-  connectWallet: () => Promise<void>;
-  disconnectWallet: () => void;
   isLoading: boolean;
 }
 
-const WalletContext = createContext<WalletContextType | undefined>(undefined);
+interface WalletActions {
+  connectWallet: () => Promise<void>;
+  disconnectWallet: () => void;
+}
+
+const WalletStateContext = createContext<WalletState | undefined>(undefined);
+const WalletActionsContext = createContext<WalletActions | undefined>(undefined);
 
 export const WalletProvider = ({ children }: { children: ReactNode }) => {
   const [publicKey, setPublicKey] = useState<string | null>(null);
@@ -19,12 +45,7 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
   const [isLoading, setIsLoading] = useState(false);
   const { showError, showWarning, showSuccess } = useToast();
 
-  useEffect(() => {
-    // Always re-verify with Freighter rather than blindly trusting localStorage (#97)
-    checkWalletConnection();
-  }, []);
-
-  const checkWalletConnection = async () => {
+  const checkWalletConnection = useCallback(async () => {
     try {
       const connected = await isConnected();
       const allowed = await isAllowed();
@@ -39,9 +60,14 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
     } catch {
       localStorage.removeItem("stellar_wallet_public_key");
     }
-  };
+  }, []);
 
-  const connectWallet = async () => {
+  useEffect(() => {
+    // Always re-verify with Freighter rather than blindly trusting localStorage (#97)
+    checkWalletConnection();
+  }, [checkWalletConnection]);
+
+  const connectWallet = useCallback(async () => {
     setIsLoading(true);
     try {
       const connected = await isConnected();
@@ -67,9 +93,9 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [showError, showSuccess, showWarning]);
 
-  const disconnectWallet = () => {
+  const disconnectWallet = useCallback(() => {
     setPublicKey(null);
     setIsWalletConnected(false);
     localStorage.removeItem("stellar_wallet_public_key");
@@ -77,19 +103,49 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
     showWarning(
       "Disconnected. To fully revoke Freighter access, open the extension and remove this site from Connected Sites."
     );
-  };
+  }, [showWarning]);
+
+  const state = useMemo<WalletState>(
+    () => ({ publicKey, isWalletConnected, isLoading }),
+    [publicKey, isWalletConnected, isLoading]
+  );
+
+  const actions = useMemo<WalletActions>(
+    () => ({ connectWallet, disconnectWallet }),
+    [connectWallet, disconnectWallet]
+  );
 
   return (
-    <WalletContext.Provider
-      value={{ publicKey, isWalletConnected, connectWallet, disconnectWallet, isLoading }}
-    >
-      {children}
-    </WalletContext.Provider>
+    <WalletStateContext.Provider value={state}>
+      <WalletActionsContext.Provider value={actions}>{children}</WalletActionsContext.Provider>
+    </WalletStateContext.Provider>
   );
 };
 
-export const useWallet = () => {
-  const ctx = useContext(WalletContext);
-  if (!ctx) throw new Error("useWallet must be used within a WalletProvider");
+/** Subscribe to wallet state only. Re-renders when connection state changes. */
+export const useWalletState = (): WalletState => {
+  const ctx = useContext(WalletStateContext);
+  if (!ctx) throw new Error("useWalletState must be used within a WalletProvider");
   return ctx;
+};
+
+/**
+ * Subscribe to wallet actions only. Never causes a re-render — prefer this in
+ * components that only trigger connect/disconnect (buttons, menu items).
+ */
+export const useWalletActions = (): WalletActions => {
+  const ctx = useContext(WalletActionsContext);
+  if (!ctx) throw new Error("useWalletActions must be used within a WalletProvider");
+  return ctx;
+};
+
+/**
+ * Combined accessor, kept so existing call sites keep working. Subscribes to
+ * both contexts — reach for `useWalletState` or `useWalletActions` instead when
+ * a component only needs one half.
+ */
+export const useWallet = () => {
+  const state = useWalletState();
+  const actions = useWalletActions();
+  return useMemo(() => ({ ...state, ...actions }), [state, actions]);
 };
