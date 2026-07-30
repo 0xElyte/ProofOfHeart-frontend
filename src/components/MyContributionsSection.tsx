@@ -3,11 +3,18 @@
 import Link from "next/link";
 import { useMemo, useState, useCallback } from "react";
 import { Download } from "lucide-react";
+<<<<<<< Updated upstream
 import { useTranslations, useLocale } from "next-intl";
 import { claimRefund, claimRevenue } from "../lib/contractClient";
 import { getStellarExplorerTxUrl } from "../lib/stellarExplorer";
 import { useContributions } from "../hooks/useContributions";
 import { stroopsToXlmNumber } from "../lib/stellarAmount";
+=======
+import { useLocale } from "next-intl";
+import { claimRefund, claimRevenue } from "../lib/contractClient";
+import { getStellarExplorerTxUrl } from "../lib/stellarExplorer";
+import { useContributions } from "../hooks/useContributions";
+>>>>>>> Stashed changes
 import { formatAmount } from "../lib/formatters";
 import { useToast } from "./ToastProvider";
 import { parseContractError } from "../utils/contractErrors";
@@ -75,7 +82,10 @@ function claimKey(campaignId: number, type: "refund" | "revenue"): ClaimKey {
 }
 
 export default function MyContributionsSection({ walletAddress }: MyContributionsSectionProps) {
+<<<<<<< Updated upstream
   const t = useTranslations();
+=======
+>>>>>>> Stashed changes
   const locale = useLocale();
   const { showError, showSuccess, showWarning } = useToast();
   const [pendingCampaignId, setPendingCampaignId] = useState<number | null>(null);
