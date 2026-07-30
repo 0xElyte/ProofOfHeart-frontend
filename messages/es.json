@@ -101,6 +101,7 @@
     "donatedSuccess": "{amount} XLM donados correctamente",
     "thankYou": "Gracias por apoyar esta causa.",
     "viewExplorer": "Ver en Stellar Explorer →",
+    "downloadReceipt": "Descargar Recibo Fiscal (PDF)",
     "close": "Cerrar"
   },
   "Admin": {

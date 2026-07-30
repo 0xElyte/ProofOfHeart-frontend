@@ -11,6 +11,7 @@ import { useToast } from "./ToastProvider";
 import { useWallet } from "./WalletContext";
 import { usePlatformFee } from "../hooks/usePlatformFee";
 import { parseContractError } from "../utils/contractErrors";
+import { downloadTaxReceipt } from "../lib/taxReceipt";
 import { type TransactionLifecyclePhase } from "../lib/contractClient";
 import { validateContributorNotCreator } from "../utils/validators";
 import { explorerTxUrl } from "../utils/explorer";
@@ -454,14 +455,30 @@ export default function DonationModal({
                 <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">{t("thankYou")}</p>
               </div>
               {txHash && (
-                <a
-                  href={explorerTxUrl(txHash)}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-sm text-blue-600 dark:text-blue-400 underline underline-offset-2 hover:text-blue-800 dark:hover:text-blue-200 transition-colors"
-                >
-                  {t("viewExplorer")}
-                </a>
+                <>
+                  <a
+                    href={explorerTxUrl(txHash)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-sm text-blue-600 dark:text-blue-400 underline underline-offset-2 hover:text-blue-800 dark:hover:text-blue-200 transition-colors"
+                  >
+                    {t("viewExplorer")}
+                  </a>
+                  <button
+                    onClick={() =>
+                      downloadTaxReceipt({
+                        transactionHash: txHash,
+                        campaignTitle: campaign.title,
+                        amountXlm: amountNum.toString(),
+                        donorAddress: publicKey ?? "",
+                        donationDate: new Date().toISOString(),
+                      })
+                    }
+                    className="w-full py-3 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-xl transition-colors"
+                  >
+                    {t("downloadReceipt")}
+                  </button>
+                </>
               )}
               <button
                 onClick={onClose}
