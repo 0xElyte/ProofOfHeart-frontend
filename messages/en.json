@@ -585,6 +585,5 @@
     "totalXlm": "{amount} XLM Total",
     "nextXlm": "Next: {amount} XLM",
     "earnedBadges": "Earned Badges"
->>>>>>> 7d1fbd2 (fix(i18n): fix multiple i18n issues)
   }
 }
