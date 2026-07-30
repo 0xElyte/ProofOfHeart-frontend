@@ -33,6 +33,8 @@ export interface ThirdPartyScript {
   strategy: ScriptStrategy;
   /** Extra DOM attributes, e.g. Plausible's `data-domain`. */
   attributes?: Record<string, string>;
+  /** Called when the script fails to load. */
+  onError?: () => void;
 }
 
 /** Supported privacy-first analytics vendors. */
@@ -124,10 +126,16 @@ export function getSupportWidgetScript(): ThirdPartyScript | null {
   };
 }
 
-/** Every configured third-party script, in load order. */
+/** Every configured third-party script, in load order (deduplicated by id). */
 export function getThirdPartyScripts(): ThirdPartyScript[] {
+  const seen = new Set<string>();
   return [getAnalyticsScript(), getSupportWidgetScript()].filter(
-    (script): script is ThirdPartyScript => script !== null,
+    (script): script is ThirdPartyScript => {
+      if (script === null) return false;
+      if (seen.has(script.id)) return false;
+      seen.add(script.id);
+      return true;
+    },
   );
 }
 
@@ -154,4 +162,9 @@ export function getThirdPartyScriptOrigins(): string[] {
 /** The analytics vendor in use, for the runtime event dispatcher. */
 export function getAnalyticsProvider(): AnalyticsProvider | null {
   return getAnalyticsScript() ? readProvider() : null;
+}
+
+/** Invoke a script's error handler, if one is configured. */
+export function handleScriptError(script: ThirdPartyScript): void {
+  script.onError?.();
 }

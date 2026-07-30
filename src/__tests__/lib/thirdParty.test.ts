@@ -134,6 +134,36 @@ describe("thirdParty script registry", () => {
     }
   });
 
+  it("handles script load errors via onError callback", () => {
+    const onError = jest.fn();
+    const mod = loadWithEnv({
+      NEXT_PUBLIC_ANALYTICS_PROVIDER: "plausible",
+      NEXT_PUBLIC_ANALYTICS_DOMAIN: "proofofheart.xyz",
+    });
+
+    // Script configs returned by the registry have no onError by default.
+    for (const s of mod.getThirdPartyScripts()) {
+      mod.handleScriptError(s);
+    }
+    expect(onError).not.toHaveBeenCalled();
+
+    // When a consumer wires onError, handleScriptError invokes it.
+    const script = mod.getThirdPartyScripts()[0];
+    mod.handleScriptError({ ...script, onError });
+    expect(onError).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not return duplicate script ids", () => {
+    const mod = loadWithEnv({
+      NEXT_PUBLIC_ANALYTICS_PROVIDER: "plausible",
+      NEXT_PUBLIC_ANALYTICS_DOMAIN: "proofofheart.xyz",
+      NEXT_PUBLIC_SUPPORT_WIDGET_SRC: "https://widget.example.com/w.js",
+    });
+
+    const ids = mod.getThirdPartyScripts().map((s) => s.id);
+    expect(new Set(ids).size).toBe(ids.length);
+  });
+
   it("derives CSP origins from the configured scripts", () => {
     const mod = loadWithEnv({
       NEXT_PUBLIC_ANALYTICS_PROVIDER: "plausible",

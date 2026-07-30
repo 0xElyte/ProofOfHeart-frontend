@@ -38,7 +38,7 @@ export default function ThirdPartyScripts() {
 
   return (
     <>
-      {scripts.map(({ id, src, strategy, attributes }) => {
+      {scripts.map(({ id, src, strategy, attributes, onError }) => {
         // #647 — Guard: `beforeInteractive` runs during SSR and blocks the main
         // thread before hydration — exactly the problem this component exists to
         // solve. Any misconfigured entry is demoted to `lazyOnload` at runtime
@@ -59,6 +59,7 @@ export default function ThirdPartyScripts() {
             id={id}
             src={src}
             strategy={safeStrategy}
+            onError={onError}
             // Funnel events fired during hydration are buffered by `analytics.ts`
             // until the vendor global exists; this is where they get drained.
             onLoad={id === analyticsId ? flushAnalyticsQueue : undefined}
