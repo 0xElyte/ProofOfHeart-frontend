@@ -204,6 +204,18 @@ Authenticated off-chain mutations send wallet signatures with:
 
 The client retries transient failures and falls back to the existing mock/local stores when `NEXT_PUBLIC_API_URL` is not set.
 
+#### Feature Flags
+
+The project uses a simple feature flag system to gate in-progress features. Flags are controlled by `NEXT_PUBLIC_FEATURE_*` environment variables and default to `false` (disabled) in production.
+
+| Feature   | Environment Variable            | Default | Purpose                                             |
+| --------- | ------------------------------- | ------- | --------------------------------------------------- |
+| votingUI  | `NEXT_PUBLIC_FEATURE_VOTINGUI`  | `false` | Enables the voting UI on cause detail pages         |
+| analytics | `NEXT_PUBLIC_FEATURE_ANALYTICS` | `false` | Enables analytics event tracking                    |
+| embeds    | `NEXT_PUBLIC_FEATURE_EMBEDS`    | `false` | Enables embedded content (e.g. social media embeds) |
+
+> **Note on caching:** Feature flags are read once at module initialization and cached for the lifetime of the process. Changing environment variables during development will not take effect until the dev server is restarted. See [issue #559](https://github.com/Iris-IV/ProofOfHeart-frontend/issues/559) for details.
+
 ## 🚀 Mainnet Launch Checklist
 
 Before going live on the Stellar public network, ensure the following production-readiness items are complete:
