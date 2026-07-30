@@ -556,5 +556,15 @@
     "totalXlm": "{amount} XLM Total",
     "nextXlm": "Next: {amount} XLM",
     "earnedBadges": "Earned Badges"
+  },
+  "CauseDetail": {
+    "noDescription": "No description provided by the creator."
+  },
+  "FiatOnramp": {
+    "buyWithCard": "Buy XLM with card",
+    "buyWithCardDescription": "New to crypto? Purchase XLM with a card or bank transfer, then donate.",
+    "opening": "Opening secure checkout…",
+    "error": "Could not open the payment provider. Please try again.",
+    "poweredBy": "Powered by {provider}"
   }
 }
