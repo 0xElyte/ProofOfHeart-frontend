@@ -825,6 +825,9 @@ export async function init(
   }
 }
 
+// TODO(#558): `tags` is accepted here but silently dropped on the non-mock
+// contract-call path below — it's never sent to contract.call() or encoded
+// into the off-chain description blob like coverImageUrl/milestones are.
 export async function createCampaign(
   creator: string,
   title: string,
