@@ -85,10 +85,10 @@ async function loadClient(options: LoadClientOptions) {
   let txCounter = 0;
 
   const mockServer = {
-    getAccount: jest.fn().mockResolvedValue({
-      accountId: () => TEST_ADMIN,
+    getAccount: jest.fn().mockImplementation(async (publicKey: string) => ({
+      accountId: () => publicKey,
       sequenceNumber: () => "1",
-    }),
+    })),
     simulateTransaction: jest
       .fn()
       .mockImplementation((tx: { ops?: Array<{ method?: string }> }) => {
@@ -123,8 +123,11 @@ async function loadClient(options: LoadClientOptions) {
     })),
   };
 
+  const serverUrls: string[] = [];
+
   class MockServer {
-    constructor() {
+    constructor(url: string) {
+      serverUrls.push(url);
       return mockServer;
     }
   }
@@ -234,7 +237,7 @@ async function loadClient(options: LoadClientOptions) {
   }));
 
   const module = await import("../../lib/contractClient");
-  return { module, mockServer, stellarSdkMock };
+  return { module, mockServer, stellarSdkMock, serverUrls };
 }
 
 describe("contractClient", () => {
@@ -387,5 +390,76 @@ describe("contractClient", () => {
     expect(await module.updateAdmin(TEST_NEW_ADMIN)).toMatch(/^hash-/);
     expect(await module.voteOnCampaign(1, TEST_USER, true)).toMatch(/^hash-/);
     expect(await module.verifyCampaignWithVotes(1)).toMatch(/^hash-/);
+  });
+
+  describe("RPC server lifecycle", () => {
+    it("reuses one server across successful calls", async () => {
+      const { module, serverUrls } = await loadClient({ useMocks: false });
+
+      await module.getAdmin();
+      await module.getPlatformFee();
+      await module.getCampaignCount();
+
+      expect(serverUrls).toEqual(["https://example-rpc.invalid"]);
+    });
+
+    it("reconnects on the next call after a transport failure", async () => {
+      const { module, mockServer, serverUrls } = await loadClient({ useMocks: false });
+
+      await module.getAdmin();
+      expect(serverUrls).toHaveLength(1);
+
+      const transportError = new TypeError("fetch failed");
+      transportError.cause = Object.assign(new Error("connect ECONNREFUSED"), {
+        code: "ECONNREFUSED",
+      });
+      mockServer.simulateTransaction.mockImplementationOnce(() => {
+        throw transportError;
+      });
+
+      await expect(module.getAdmin()).rejects.toThrow();
+
+      // The stale client is dropped, so the retry builds a fresh one and works.
+      await expect(module.getAdmin()).resolves.toBe(TEST_ADMIN);
+      expect(serverUrls).toHaveLength(2);
+    });
+
+    it("reconnects after a timeout", async () => {
+      const { module, mockServer, serverUrls } = await loadClient({ useMocks: false });
+
+      await module.getAdmin();
+      mockServer.simulateTransaction.mockImplementationOnce(() => {
+        throw new Error("Request timed out after 30000ms");
+      });
+
+      await expect(module.getAdmin()).rejects.toThrow();
+      await expect(module.getAdmin()).resolves.toBe(TEST_ADMIN);
+      expect(serverUrls).toHaveLength(2);
+    });
+
+    it("keeps the server when the node returns an application error", async () => {
+      const { module, mockServer, serverUrls } = await loadClient({ useMocks: false });
+
+      await module.getAdmin();
+      mockServer.simulateTransaction.mockImplementationOnce(() => {
+        throw new Error("Error(Contract, #6)");
+      });
+
+      await expect(module.getAdmin()).rejects.toThrow();
+      await expect(module.getAdmin()).resolves.toBe(TEST_ADMIN);
+      expect(serverUrls).toHaveLength(1);
+    });
+
+    it("resetRpcServer() forces a reconnect", async () => {
+      const { module, serverUrls } = await loadClient({ useMocks: false });
+
+      await module.getAdmin();
+      expect(serverUrls).toHaveLength(1);
+
+      module.resetRpcServer();
+      await module.getAdmin();
+
+      expect(serverUrls).toHaveLength(2);
+    });
   });
 });
