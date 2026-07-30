@@ -1,5 +1,3 @@
-import { formatAddress } from "./formatAddress";
-
 export interface TaxReceiptData {
   /** Stellar transaction hash */
   transactionHash: string;
