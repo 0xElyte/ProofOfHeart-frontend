@@ -89,7 +89,7 @@ jest.mock("@/components/CauseCard", () => {
   const { useSavedCampaigns } = jest.requireActual("@/hooks/useSavedCampaigns");
   return {
     __esModule: true,
-    default: ({ campaign }: { campaign: Campaign }) => {
+    default: function MockCauseCard({ campaign }: { campaign: Campaign }) {
       const { isSaved, toggleSaved } = useSavedCampaigns();
       return (
         <div>
