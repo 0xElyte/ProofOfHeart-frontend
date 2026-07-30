@@ -177,7 +177,8 @@
     "signing": "Firmando...",
     "submitting": "Enviando...",
     "confirming": "Confirmando...",
-    "transferring": "Transfiriendo..."
+    "transferring": "Transfiriendo...",
+    "requiredWord": "CONFIRMAR"
   },
   "ContractErrors": {
     "NotAuthorized": "No estás autorizado para realizar esta acción.",
