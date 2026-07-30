@@ -6,12 +6,12 @@ import { Search } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useState, useEffect, useCallback, useMemo, Suspense } from "react";
 import { MapIcon, ListIcon } from "lucide-react";
-import CauseCard from "@/components/CauseCard";
 import { CauseCardSkeleton } from "@/components/Skeleton";
 import MapErrorBoundary from "@/components/MapErrorBoundary";
 import { useToast } from "@/components/ToastProvider";
 import { useWallet } from "@/components/WalletContext";
-import { useCampaigns } from "@/hooks/useCampaigns";
+import VirtualizedCauseGrid from "@/components/VirtualizedCauseGrid";
+import { useInfiniteCampaigns } from "@/hooks/useInfiniteCampaigns";
 import { useRouter } from "@/i18n/routing";
 
 const CampaignMap = dynamic(() => import("@/components/CampaignMap"), {
@@ -30,7 +30,6 @@ import {
   getApproveVotes,
   getRejectVotes,
 } from "@/lib/contractClient";
-import { CAUSES_PAGE_SIZE } from "@/lib/causesList";
 import { SORT_OPTIONS } from "@/lib/mockCauses";
 import { Campaign, Vote, CATEGORY_LABELS, CampaignStatus, Category } from "@/types";
 import { getAsyncActionErrorMessage, withActionTimeout } from "@/utils/asyncAction";
@@ -115,7 +114,15 @@ function CausesContent() {
     "failed",
   ];
 
-  const { campaigns: rawCampaigns, isLoading, error, refetch } = useCampaigns();
+  const {
+    campaigns: rawCampaigns,
+    isLoading,
+    error,
+    refetch,
+    hasNextPage,
+    isFetchingNextPage,
+    fetchNextPage,
+  } = useInfiniteCampaigns();
 
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [userVotes, setUserVotes] = useState<Record<string, Vote>>({});
@@ -123,7 +130,6 @@ function CausesContent() {
     Record<number, { upvotes: number; downvotes: number; totalVotes: number }>
   >({});
   const [isVotingFor, setIsVotingFor] = useState<number | null>(null);
-  const [visibleCount, setVisibleCount] = useState(CAUSES_PAGE_SIZE);
   const [mounted, setMounted] = useState(false);
   const { publicKey: userWalletAddress } = useWallet();
   const { showError, showSuccess, showWarning } = useToast();
@@ -420,17 +426,6 @@ function CausesContent() {
     return result;
   }, [campaigns, debouncedSearch, category, status, sort, tag, voteCounts]);
 
-  useEffect(() => {
-    setVisibleCount(CAUSES_PAGE_SIZE);
-  }, [debouncedSearch, category, status, sort, tag]);
-
-  const visibleCampaigns = useMemo(
-    () => filteredCampaigns.slice(0, visibleCount),
-    [filteredCampaigns, visibleCount],
-  );
-
-  const hasMoreCampaigns = visibleCount < filteredCampaigns.length;
-
   const hasActiveFilters =
     debouncedSearch || category !== "all" || status !== "all" || sort !== "newest" || tag;
 
@@ -673,48 +668,19 @@ function CausesContent() {
                 </div>
 
                 {filteredCampaigns.length > 0 ? (
-                  <>
-                    {filteredCampaigns.length > CAUSES_PAGE_SIZE && (
-                      <p className="text-xs text-zinc-500 dark:text-zinc-400 mb-3">
-                        {t("showingRange", {
-                          shown: visibleCampaigns.length,
-                          total: filteredCampaigns.length,
-                        })}
-                      </p>
-                    )}
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                      {visibleCampaigns.map((campaign) => (
-                        <CauseCard
-                          key={campaign.id}
-                          campaign={campaign}
-                          userWalletAddress={userWalletAddress}
-                          onVote={handleVote}
-                          onCancel={handleCancel}
-                          onClaimRefund={handleClaimRefund}
-                          onTagClick={handleTagClick}
-                          userVote={userVotes[campaign.id]}
-                          upvotes={voteCounts[campaign.id]?.upvotes ?? 0}
-                          downvotes={voteCounts[campaign.id]?.downvotes ?? 0}
-                          totalVotes={voteCounts[campaign.id]?.totalVotes ?? 0}
-                        />
-                      ))}
-                    </div>
-                    {hasMoreCampaigns && (
-                      <div className="mt-8 flex justify-center">
-                        <button
-                          type="button"
-                          onClick={() =>
-                            setVisibleCount((count) =>
-                              Math.min(count + CAUSES_PAGE_SIZE, filteredCampaigns.length),
-                            )
-                          }
-                          className="px-6 py-2.5 rounded-full text-sm font-medium bg-blue-600 text-white hover:bg-blue-700 transition-colors"
-                        >
-                          {t("loadMore")}
-                        </button>
-                      </div>
-                    )}
-                  </>
+                  <VirtualizedCauseGrid
+                    campaigns={filteredCampaigns}
+                    userWalletAddress={userWalletAddress}
+                    onVote={handleVote}
+                    onCancel={handleCancel}
+                    onClaimRefund={handleClaimRefund}
+                    onTagClick={handleTagClick}
+                    userVotes={userVotes}
+                    voteCounts={voteCounts}
+                    hasNextPage={hasNextPage}
+                    isFetchingNextPage={isFetchingNextPage}
+                    onLoadMore={fetchNextPage}
+                  />
                 ) : (
                   <div className="text-center py-20">
                     <div className="text-5xl mb-4">
