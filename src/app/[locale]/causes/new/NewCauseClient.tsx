@@ -19,7 +19,7 @@ import { Category, CATEGORY_LABELS } from "@/types";
 import { xlmToStroops } from "@/lib/stellarAmount";
 import { parseContractError } from "@/utils/contractErrors";
 import { encodeLocalizedDescription } from "@/utils/localizedDescription";
-import { useCampaignFormDraft, type CampaignFormDraftData } from "@/hooks/useCampaignFormDraft";
+import { useCampaignFormDraft } from "@/hooks/useCampaignFormDraft";
 import { validateForm, type FormErrorKeys, type ReviewData } from "@/lib/campaignValidation";
 
 // ---------------------------------------------------------------------------
@@ -234,6 +234,7 @@ export default function CreateCampaignPage() {
         {
           onStatus: ({ phase }) => setTxPhase(phase),
           coverImageUrl: reviewData.coverImageUrl,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           milestones: reviewData.milestones as any,
         },
       );
@@ -848,7 +849,7 @@ export default function CreateCampaignPage() {
               </p>
             )}
             {coverImageUrl && !errorKeys.coverImageUrl && (
-              // eslint-disable-next-line @next/next/no-img-element
+              // eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions, @next/next/no-img-element
               <img
                 src={coverImageUrl}
                 alt="Cover preview"
