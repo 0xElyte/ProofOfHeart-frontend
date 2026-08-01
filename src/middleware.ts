@@ -44,19 +44,18 @@ export default function middleware(req: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  // #569 — Generate a per-request CSP nonce so inline scripts (the theme
-  // blocking script in <head>) can be allow-listed without `'unsafe-inline'`.
-  const nonce = generateCspNonce();
-
-  // Propagate the nonce to the layout via a request header so it can attach the
-  // same value to the <script nonce="…"> attribute.
-  req.headers.set(CSP_NONCE_HEADER, nonce);
-
   const response = intlMiddleware(req);
 
-  // Apply strict CSP with the nonce. Next.js merges headers from middleware
-  // with those from next.config.ts; setting it here overrides the static value.
-  response.headers.set("Content-Security-Policy", buildCspHeader(nonce));
+  // #621 — Enforce HSTS on every response (including intl redirects) so that
+  // browsers always upgrade HTTP to HTTPS and preload the domain.
+  // next.config.ts sets the same header for route-level responses; middleware
+  // covers maintenance redirects and locale redirects that bypass that layer.
+  if (process.env.NODE_ENV === "production") {
+    response.headers.set(
+      "Strict-Transport-Security",
+      "max-age=63072000; includeSubDomains; preload"
+    );
+  }
 
   return response;
 }
