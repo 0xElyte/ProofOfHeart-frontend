@@ -43,7 +43,6 @@ function formatDate(ts: number, locale: string) {
   return formatShortDate(ts, locale);
 }
 
-
 function CauseCard({
   campaign,
   userWalletAddress,
@@ -170,9 +169,6 @@ function CauseCard({
 
         {/* Description */}
         <CampaignDescription description={campaign.description} />
-        <p className="text-sm text-zinc-600 dark:text-zinc-400 line-clamp-3 leading-relaxed break-words h-[4.5rem]">
-          {campaign.description}
-        </p>
 
         {/* Funding progress */}
         <div className="space-y-1.5">
