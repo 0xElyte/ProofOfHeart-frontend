@@ -260,21 +260,6 @@ export default function DonationModal({
     trackReviewContribution(campaign.id);
 
     try {
-      const stroops = xlmToStroops(amountNum);
-      const hash = await contribute(campaign.id, publicKey, stroops);
-
-      // Only record the schedule once this cycle actually settled, so a failed
-      // donation never leaves a subscription behind.
-      if (isRecurring) {
-        createSchedule({
-          walletAddress: publicKey,
-          campaignId: campaign.id,
-          campaignTitle: campaign.title,
-          amountStroops: stroops,
-          interval: recurringInterval,
-        });
-      }
-
       const stroops = xlmToStroops(amountToSend);
       const hash = await contribute(campaign.id, publicKey, stroops, {
         onStatus: ({ phase }) => {

@@ -1,14 +1,5 @@
 "use client";
 
-import { memo, useState } from 'react';
-import { formatAddress } from '@/lib/formatAddress';
-import { Campaign, Vote, CATEGORY_LABELS } from '../types';
-import CampaignDescription from './CampaignDescription';
-import CampaignStatusBadge from './CampaignStatusBadge';
-import CancelCampaignModal from './cancelCampaignModal';
-import DeadlineCountdown from './DeadlineCountdown';
-import FundingProgressBar from './FundingProgressBar';
-import VotingComponent from './VotingComponent';
 import Image from "next/image";
 import { memo, useState } from "react";
 import { Bookmark } from "lucide-react";
@@ -20,6 +11,7 @@ import { parseContractError } from "@/utils/contractErrors";
 import { Campaign, Vote, CATEGORY_LABELS, calculateFundingPercentage } from "../types";
 import Amount from "./Amount";
 import AsyncButtonContent from "./AsyncButtonContent";
+import CampaignDescription from "./CampaignDescription";
 import CampaignStatusBadge from "./CampaignStatusBadge";
 import CancelCampaignModal from "./cancelCampaignModal";
 import DeadlineCountdown from "./DeadlineCountdown";
@@ -298,7 +290,6 @@ function CauseCard({
  * global state changes (#648). Cards are rendered in long lists, so this is
  * where an unnecessary render is most expensive.
  */
-export default memo(CauseCard);
 function causeCardPropsAreEqual(prev: CauseCardProps, next: CauseCardProps): boolean {
   const prevCampaign = prev.campaign;
   const nextCampaign = next.campaign;
