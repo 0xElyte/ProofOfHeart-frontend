@@ -575,6 +575,7 @@
     "prefVerified": "Campaña verificada",
     "prefRefundAvailable": "Reembolso disponible",
     "prefRevenueDeposited": "Depósitos de ingresos"
+  },
   "CauseDetail": {
     "noDescription": "El creador no proporcionó una descripción."
   },

@@ -575,6 +575,7 @@
     "prefVerified": "Campaign verified",
     "prefRefundAvailable": "Refund available",
     "prefRevenueDeposited": "Revenue deposits"
+  },
   "CauseDetail": {
     "noDescription": "No description provided by the creator."
   },
