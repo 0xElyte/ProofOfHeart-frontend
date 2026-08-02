@@ -11,6 +11,7 @@ import { parseContractError } from "@/utils/contractErrors";
 import { Campaign, Vote, CATEGORY_LABELS, calculateFundingPercentage } from "../types";
 import Amount from "./Amount";
 import AsyncButtonContent from "./AsyncButtonContent";
+import CampaignDescription from "./CampaignDescription";
 import CampaignStatusBadge from "./CampaignStatusBadge";
 import CancelCampaignModal from "./cancelCampaignModal";
 import DeadlineCountdown from "./DeadlineCountdown";
@@ -282,6 +283,11 @@ function CauseCard({
   );
 }
 
+/**
+ * Memoized so a list of cards does not re-render wholesale when unrelated
+ * global state changes (#648). Cards are rendered in long lists, so this is
+ * where an unnecessary render is most expensive.
+ */
 function causeCardPropsAreEqual(prev: CauseCardProps, next: CauseCardProps): boolean {
   const prevCampaign = prev.campaign;
   const nextCampaign = next.campaign;
