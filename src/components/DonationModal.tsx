@@ -259,6 +259,19 @@ export default function DonationModal({
         },
       });
       setTxHash(hash);
+
+      // Only record the schedule once this cycle actually settled, so a failed
+      // donation never leaves a subscription behind.
+      if (isRecurring) {
+        createSchedule({
+          walletAddress: publicKey,
+          campaignId: campaign.id,
+          campaignTitle: campaign.title,
+          amountStroops: stroops,
+          interval: recurringInterval,
+        });
+      }
+
       setStep("confirmed");
       trackContributionConfirmed(campaign.id);
       onSuccess();
