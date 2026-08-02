@@ -20,6 +20,7 @@ const PLATFORM_TAX_ID = process.env.NEXT_PUBLIC_PLATFORM_TAX_ID?.trim() || "XX-X
  */
 export function downloadTaxReceipt(data: TaxReceiptData): void {
   const generatedDate = new Date().toISOString().split("T")[0];
+  const donationDate = data.donationDate.split("T")[0];
   const html = `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -42,7 +43,8 @@ export function downloadTaxReceipt(data: TaxReceiptData): void {
   <div class="subtitle">Issued by ${PLATFORM_NAME} &mdash; Tax ID: ${PLATFORM_TAX_ID}</div>
   <hr>
   <table>
-    <tr><td>Receipt Issue Date</td><td>${data.donationDate}</td></tr>
+    <tr><td>Receipt Issue Date</td><td>${generatedDate}</td></tr>
+    <tr><td>Donation Date</td><td>${donationDate}</td></tr>
     <tr><td>Campaign</td><td>${data.campaignTitle}</td></tr>
     <tr><td>Donation Amount</td><td>${data.amountXlm} XLM</td></tr>
     <tr><td>Donor Address</td><td>${data.donorAddress}</td></tr>
@@ -65,5 +67,8 @@ export function downloadTaxReceipt(data: TaxReceiptData): void {
       // Clean up the object URL after the window loads
       setTimeout(() => URL.revokeObjectURL(url), 1000);
     };
+  } else {
+    // Popup was blocked — revoke the URL immediately since it won't be used
+    URL.revokeObjectURL(url);
   }
 }
