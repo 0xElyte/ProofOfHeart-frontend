@@ -34,10 +34,12 @@ jest.mock("next-intl", () => ({
       labelTitle: "Campaign Title",
       placeholderTitle: "A clear, compelling title for your campaign",
       labelDescription: "Description",
-      placeholderDescription: "Describe your campaign, what it aims to achieve, and how funds will be used",
+      placeholderDescription:
+        "Describe your campaign, what it aims to achieve, and how funds will be used",
       labelCreatorEmailOptional: "Creator Email (Optional)",
       placeholderCreatorEmail: "name@example.com",
-      creatorEmailNote: "Optional, off-chain only. Used for campaign milestone and deadline notifications.",
+      creatorEmailNote:
+        "Optional, off-chain only. Used for campaign milestone and deadline notifications.",
       labelFundingGoal: "Funding Goal (XLM)",
       labelDuration: "Duration (days)",
       placeholderDuration: "1–365",
@@ -50,12 +52,14 @@ jest.mock("next-intl", () => ({
       cancel: "Cancel",
       launchCampaign: "Launch Campaign",
       reviewTitle: "Review Campaign Before Signing",
-      reviewSubtitle: "Launching is irreversible on-chain. Confirm these details before signing in Freighter.",
+      reviewSubtitle:
+        "Launching is irreversible on-chain. Confirm these details before signing in Freighter.",
       reviewFieldTitle: "Title",
       reviewFieldCreatorEmail: "Creator Email",
       reviewFieldFundingGoal: "Funding Goal",
       reviewFieldDuration: "Duration",
-      reviewFieldDurationDays: values?.count === 1 ? `${values.count} day` : `${values?.count} days`,
+      reviewFieldDurationDays:
+        values?.count === 1 ? `${values.count} day` : `${values?.count} days`,
       reviewFieldCategory: "Category",
       reviewFieldRevenueShare: "Revenue Share",
       reviewRevenueShareNone: "0.00% (Not enabled)",
@@ -66,7 +70,8 @@ jest.mock("next-intl", () => ({
       confirmAndSign: "Confirm & Sign",
       submitting: "Submitting…",
       successMessage: `Campaign "${values?.title}" created successfully!`,
-      emailWebhookFailed: "Campaign created, but we could not save your optional email subscription.",
+      emailWebhookFailed:
+        "Campaign created, but we could not save your optional email subscription.",
       walletRequiredError: "Please connect your Freighter wallet before creating a campaign.",
       validationTitleRequired: "Title is required.",
       validationTitleTooLong: "Title must be 100 characters or fewer.",
@@ -510,9 +515,7 @@ describe("CreateCampaignPage — submission", () => {
     await userEvent.click(screen.getByRole("button", { name: /confirm & sign/i }));
 
     await waitFor(() => {
-      expect(mockShowSuccess).toHaveBeenCalledWith(
-        expect.stringContaining("created successfully"),
-      );
+      expect(mockShowSuccess).toHaveBeenCalledWith(expect.stringContaining("created successfully"));
     });
     await waitFor(() => {
       expect(mockPush).toHaveBeenCalledWith("/causes/7");
@@ -539,9 +542,7 @@ describe("CreateCampaignPage — submission", () => {
     await userEvent.click(screen.getByRole("button", { name: /confirm & sign/i }));
 
     await waitFor(() => {
-      expect(mockShowError).toHaveBeenCalledWith(
-        expect.stringContaining("CampaignNotActive"),
-      );
+      expect(mockShowError).toHaveBeenCalledWith(expect.stringContaining("CampaignNotActive"));
     });
   });
 
