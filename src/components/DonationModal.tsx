@@ -11,17 +11,15 @@ import { useToast } from "./ToastProvider";
 import { useWallet } from "./WalletContext";
 import { usePlatformFee } from "../hooks/usePlatformFee";
 import { parseContractError } from "../utils/contractErrors";
-import {
-  INTERVAL_LABELS,
-  RecurringInterval,
-  createSchedule,
-} from "../lib/recurringDonations";
+import { downloadTaxReceipt } from "../lib/taxReceipt";
+import { INTERVAL_LABELS, RecurringInterval, createSchedule } from "../lib/recurringDonations";
 
 const EXPLORER_BASE =
   process.env.NEXT_PUBLIC_EXPLORER_URL ?? "https://stellar.expert/explorer/testnet/tx";
 import { type TransactionLifecyclePhase } from "../lib/contractClient";
 import { validateContributorNotCreator } from "../utils/validators";
 import { explorerTxUrl } from "../utils/explorer";
+import FiatOnrampButton from "./FiatOnrampButton";
 import {
   trackClickContribute,
   trackEnterAmount,
@@ -258,8 +256,16 @@ export default function DonationModal({
     trackReviewContribution(campaign.id);
 
     try {
-      const stroops = xlmToStroops(amountNum);
-      const hash = await contribute(campaign.id, publicKey, stroops);
+      const stroops = xlmToStroops(amountToSend);
+      const hash = await contribute(campaign.id, publicKey, stroops, {
+        onStatus: ({ phase }) => {
+          setTxPhase(phase);
+          if (phase === "signing") {
+            trackSignTransaction(campaign.id);
+          }
+        },
+      });
+      setTxHash(hash);
 
       // Only record the schedule once this cycle actually settled, so a failed
       // donation never leaves a subscription behind.
@@ -273,16 +279,6 @@ export default function DonationModal({
         });
       }
 
-      const stroops = xlmToStroops(amountToSend);
-      const hash = await contribute(campaign.id, publicKey, stroops, {
-        onStatus: ({ phase }) => {
-          setTxPhase(phase);
-          if (phase === "signing") {
-            trackSignTransaction(campaign.id);
-          }
-        },
-      });
-      setTxHash(hash);
       setStep("confirmed");
       trackContributionConfirmed(campaign.id);
       onSuccess();
@@ -494,6 +490,13 @@ export default function DonationModal({
               >
                 {amountNum > 0 ? t("donateAmount", { amount: amountNum }) : t("donate")}
               </button>
+
+              {/* #637 — fiat on-ramp so non-crypto users can buy XLM to donate.
+                  Renders nothing unless a provider is configured via env vars. */}
+              <FiatOnrampButton
+                walletAddress={publicKey}
+                fiatAmount={amountNum > 0 ? amountNum : null}
+              />
             </>
           )}
 
@@ -521,21 +524,37 @@ export default function DonationModal({
                 </p>
                 {isRecurring && (
                   <p className="text-sm text-blue-600 dark:text-blue-400 mt-2">
-                    {INTERVAL_LABELS[recurringInterval]} donation set up. We&apos;ll remind you when the
-                    next one is due.
+                    {INTERVAL_LABELS[recurringInterval]} donation set up. We&apos;ll remind you when
+                    the next one is due.
                   </p>
                 )}
                 <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">{t("thankYou")}</p>
               </div>
               {txHash && (
-                <a
-                  href={explorerTxUrl(txHash)}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-sm text-blue-600 dark:text-blue-400 underline underline-offset-2 hover:text-blue-800 dark:hover:text-blue-200 transition-colors"
-                >
-                  {t("viewExplorer")}
-                </a>
+                <>
+                  <a
+                    href={explorerTxUrl(txHash)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-sm text-blue-600 dark:text-blue-400 underline underline-offset-2 hover:text-blue-800 dark:hover:text-blue-200 transition-colors"
+                  >
+                    {t("viewExplorer")}
+                  </a>
+                  <button
+                    onClick={() =>
+                      downloadTaxReceipt({
+                        transactionHash: txHash,
+                        campaignTitle: campaign.title,
+                        amountXlm: amountNum.toString(),
+                        donorAddress: publicKey ?? "",
+                        donationDate: new Date().toISOString(),
+                      })
+                    }
+                    className="w-full py-3 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-xl transition-colors"
+                  >
+                    {t("downloadReceipt")}
+                  </button>
+                </>
               )}
               <button
                 onClick={onClose}

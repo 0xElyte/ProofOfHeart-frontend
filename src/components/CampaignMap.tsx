@@ -67,7 +67,10 @@ interface CampaignMapProps {
 
 export default function CampaignMap({ campaigns }: CampaignMapProps) {
   const t = useTranslations("CampaignMap");
-  const validCampaigns = useMemo(() => filterByValidCoordinates(campaigns), [campaigns]);
+  const validCampaigns = useMemo(
+    () => filterByValidCoordinates(Array.isArray(campaigns) ? campaigns : []),
+    [campaigns],
+  );
 
   const center = useMemo<[number, number]>(() => {
     if (validCampaigns.length === 0) return [20, 0];
@@ -83,9 +86,7 @@ export default function CampaignMap({ campaigns }: CampaignMapProps) {
         <h3 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50 mb-2">
           {t("emptyTitle")}
         </h3>
-        <p className="text-zinc-600 dark:text-zinc-400 max-w-md">
-          {t("emptyBody")}
-        </p>
+        <p className="text-zinc-600 dark:text-zinc-400 max-w-md">{t("emptyBody")}</p>
       </div>
     );
   }
