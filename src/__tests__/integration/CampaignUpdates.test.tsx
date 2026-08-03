@@ -248,7 +248,9 @@ describe("UpdatesSection Integration", () => {
       fireEvent.click(screen.getByText("Post Update"));
 
       // Button should be in loading state (disabled with spinner)
-      expect(screen.getByRole("button", { name: /Posting|Post Update/i })).toBeDisabled();
+      await waitFor(() => {
+        expect(screen.getByRole("button", { name: /Posting|Post Update/i })).toBeDisabled();
+      });
     });
 
     it("shows error toast on submission failure", async () => {
