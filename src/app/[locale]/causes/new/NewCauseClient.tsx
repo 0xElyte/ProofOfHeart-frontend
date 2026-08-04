@@ -985,7 +985,10 @@ export default function CreateCampaignPage() {
               disabled={isSubmitting || !isWalletConnected}
               className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
-              {t("launchCampaign")}
+              {isSubmitting && (
+                <span className="inline-block motion-safe:animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
+              )}
+              {isSubmitting ? t("submitting") : t("launchCampaign")}
             </button>
           </div>
         </form>
