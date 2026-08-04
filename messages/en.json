@@ -20,6 +20,12 @@
     "socialLoginHint": "Creates a Stellar wallet secured by your social account — no extension needed.",
     "signedInAs": "Signed in as {name}"
   },
+  "PwaInstaller": {
+    "installTitle": "Install ProofOfHeart",
+    "installSubtitle": "Add to home screen for the best experience",
+    "installButton": "Install",
+    "dismissButton": "Dismiss"
+  },
   "Home": {
     "heroTitle": "Decentralized validation for heart-driven causes.",
     "heroSubtitle": "The community validates, you contribute, and impact is recorded on-chain.",
