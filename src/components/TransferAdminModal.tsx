@@ -44,7 +44,7 @@ export default function TransferAdminModal({
   const inputRef = useRef<HTMLInputElement>(null);
   const [confirmInput, setConfirmInput] = useState("");
 
-  const requiredWord = "CONFIRM";
+  const requiredWord = t("requiredWord");
   const canConfirm = confirmInput.trim() === requiredWord;
 
   // Reset input when modal opens
