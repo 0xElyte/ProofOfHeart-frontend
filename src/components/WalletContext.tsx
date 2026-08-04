@@ -382,8 +382,6 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
       publicKey,
       isWalletConnected,
       walletNetworkWarning,
-      connectWallet,
-      disconnectWallet,
       isLoading,
       walletKind,
       socialProfile,
