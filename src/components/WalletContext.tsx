@@ -23,6 +23,7 @@ import {
   type SocialLoginProvider,
   type SocialWalletSession,
 } from "@/lib/socialWallet";
+import { isFreighterLockedError } from "@/utils/freighterErrors";
 import InstallFreighterModal from "./InstallFreighterModal";
 import SocialLoginButtons from "./SocialLoginButtons";
 
@@ -53,6 +54,7 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
   const [isWalletConnected, setIsWalletConnected] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [showInstallPrompt, setShowInstallPrompt] = useState(false);
+  const [isFreighterLocked, setIsFreighterLocked] = useState(false);
   const [walletNetworkWarning, setWalletNetworkWarning] = useState<string | null>(null);
   const [walletKind, setWalletKind] = useState<WalletKind | null>(null);
   const [socialProfile, setSocialProfile] = useState<SocialWalletSession | null>(null);
@@ -266,6 +268,12 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
         return;
       }
       const key = await getAddress();
+      if (key.error && isFreighterLockedError(key.error)) {
+        setIsFreighterLocked(true);
+        setShowInstallPrompt(true);
+        setIsLoading(false);
+        return;
+      }
       const network = await getNetwork();
       if ((network.networkPassphrase || "") !== appNetworkPassphrase) {
         const warning = `Switch Freighter to ${appNetworkLabel} to continue. Current wallet network does not match the app network.`;
@@ -286,12 +294,17 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
       setWalletKind("freighter");
       localStorage.setItem("stellar_wallet_public_key", key.address);
       showSuccess("Wallet connected successfully.");
-    } catch {
+    } catch (error) {
       setPublicKey(null);
       setIsWalletConnected(false);
       setWalletKind(null);
       setWalletNetworkWarning(null);
-      showError("Failed to connect wallet. Please try again.");
+      if (isFreighterLockedError(error)) {
+        setIsFreighterLocked(true);
+        setShowInstallPrompt(true);
+      } else {
+        showError("Failed to connect wallet. Please try again.");
+      }
     } finally {
       setIsLoading(false);
     }
@@ -331,11 +344,9 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const handleRetryInstall = async () => {
-    const installed = await isFreighterInstalled();
-    if (installed) {
-      setShowInstallPrompt(false);
-      connectWallet();
-    }
+    setShowInstallPrompt(false);
+    setIsFreighterLocked(false);
+    await connectWallet();
   };
 
   const disconnectWallet = () => {
@@ -393,26 +404,26 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
 
   return (
     <WalletContext.Provider value={contextValue}>
-      <WalletStateContext.Provider value={state}>
-        <WalletActionsContext.Provider value={actions}>
-          {children}
-          <InstallFreighterModal
-            isOpen={showInstallPrompt}
-            onClose={() => setShowInstallPrompt(false)}
-            onRetry={handleRetryInstall}
-            socialLogin={
-              isSocialLoginConfigured() ? (
-                <SocialLoginButtons
-                  available
-                  disabled={isLoading}
-                  onSelect={connectWithSocial}
-                  onConnected={() => setShowInstallPrompt(false)}
-                />
-              ) : undefined
-            }
-          />
-        </WalletActionsContext.Provider>
-      </WalletStateContext.Provider>
+      {children}
+      <InstallFreighterModal
+        isOpen={showInstallPrompt}
+        onClose={() => {
+          setShowInstallPrompt(false);
+          setIsFreighterLocked(false);
+        }}
+        onRetry={handleRetryInstall}
+        isLocked={isFreighterLocked}
+        socialLogin={
+          isSocialLoginConfigured() ? (
+            <SocialLoginButtons
+              available
+              disabled={isLoading}
+              onSelect={connectWithSocial}
+              onConnected={() => setShowInstallPrompt(false)}
+            />
+          ) : undefined
+        }
+      />
     </WalletContext.Provider>
   );
 };
