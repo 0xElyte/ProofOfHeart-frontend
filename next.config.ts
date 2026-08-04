@@ -2,6 +2,7 @@ import path from "node:path";
 import createNextIntlPlugin from "next-intl/plugin";
 import type { NextConfig } from "next";
 import withBundleAnalyzer from "@next/bundle-analyzer";
+import { getThirdPartyScriptOrigins } from "./src/lib/thirdParty";
 
 const withNextIntl = createNextIntlPlugin("./src/i18n/request.ts");
 const withAnalyzer = withBundleAnalyzer({

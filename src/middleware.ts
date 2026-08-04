@@ -47,20 +47,37 @@ export default function middleware(req: NextRequest) {
   // #569 — Generate a per-request CSP nonce so inline scripts (the theme
   // blocking script in <head>) can be allow-listed without `'unsafe-inline'`.
   const nonce = generateCspNonce();
+  const cspHeader = buildCspHeader(nonce);
 
   // Propagate the nonce to the layout via a request header so it can attach the
   // same value to the <script nonce="…"> attribute.
   req.headers.set(CSP_NONCE_HEADER, nonce);
 
+  // #569 — Next.js only applies the nonce to its own framework-injected inline
+  // scripts (the self.__next_f flight-payload bootstrap) when it can see the
+  // Content-Security-Policy header on the *incoming request* headers. Mirror
+  // the header on the request (pattern from the Next.js CSP docs) so hydration
+  // scripts carry a matching nonce; the response header below is what the
+  // browser enforces. Set on the request in both environments so the nonce
+  // plumbing is exercised locally too.
+  req.headers.set("Content-Security-Policy", cspHeader);
+
   const response = intlMiddleware(req);
 
-  // Apply strict CSP with the nonce. Next.js merges headers from middleware
-  // with those from next.config.ts; setting it here overrides the static value.
-  // Production-only: React's dev-mode debugging needs `unsafe-eval`, which
-  // strict CSP deliberately omits — so the header is only applied where it is
-  // safe to enforce (mirrors the HSTS guard below).
+  // #569 — Apply strict CSP with the nonce. Next.js merges headers from
+  // middleware with those from next.config.ts; setting it here overrides the
+  // static value.
+  //
+  // Production enforces the policy. Development ships the same policy as
+  // Content-Security-Policy-Report-Only: React's dev-mode debugging needs
+  // `unsafe-eval`, which strict CSP deliberately omits, so the header is only
+  // enforced where it is safe — but Report-Only still surfaces policy
+  // violations in the local console, so a break like the nonce-propagation
+  // issue above shows up in dev instead of only after deploy.
   if (process.env.NODE_ENV === "production") {
-    response.headers.set("Content-Security-Policy", buildCspHeader(nonce));
+    response.headers.set("Content-Security-Policy", cspHeader);
+  } else {
+    response.headers.set("Content-Security-Policy-Report-Only", cspHeader);
   }
 
   // #621 — Enforce HSTS on every response (including intl redirects) so that
