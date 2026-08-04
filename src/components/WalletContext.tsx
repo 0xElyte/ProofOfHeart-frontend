@@ -26,32 +26,6 @@ import {
 import InstallFreighterModal from "./InstallFreighterModal";
 import SocialLoginButtons from "./SocialLoginButtons";
 
-/**
- * Wallet state is split from wallet actions (#648).
- *
- * Previously one context held both, so every `isLoading` flip re-rendered each
- * consumer — including components that only ever call `connectWallet` and never
- * read state. Splitting means:
- *
- *   - `useWalletState()`   re-renders when publicKey / connected / loading change
- *   - `useWalletActions()` never re-renders: the value is created once
- *
- * Both values are memoized, so a re-render of `WalletProvider` itself does not
- * cascade into consumers unless the data they read actually changed.
- */
-
-interface WalletState {
-  publicKey: string | null;
-  isWalletConnected: boolean;
-  isLoading: boolean;
-}
-
-interface WalletActions {
-  connectWallet: () => Promise<void>;
-  disconnectWallet: () => void;
-}
-
-/** Combined value for the legacy `useWallet` accessor (#648). */
 interface WalletContextType {
   publicKey: string | null;
   isWalletConnected: boolean;
@@ -393,16 +367,6 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
     );
   };
 
-  const state = useMemo<WalletState>(
-    () => ({ publicKey, isWalletConnected, isLoading }),
-    [publicKey, isWalletConnected, isLoading],
-  );
-
-  const actions = useMemo<WalletActions>(
-    () => ({ connectWallet, disconnectWallet }),
-    [connectWallet, disconnectWallet],
-  );
-
   const contextValue = useMemo(
     () => ({
       publicKey,
@@ -420,8 +384,6 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
       publicKey,
       isWalletConnected,
       walletNetworkWarning,
-      connectWallet,
-      disconnectWallet,
       isLoading,
       walletKind,
       socialProfile,
@@ -455,29 +417,7 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
   );
 };
 
-/** Subscribe to wallet state only. Re-renders when connection state changes. */
-export const useWalletState = (): WalletState => {
-  const ctx = useContext(WalletStateContext);
-  if (!ctx) throw new Error("useWalletState must be used within a WalletProvider");
-  return ctx;
-};
-
-/**
- * Subscribe to wallet actions only. Never causes a re-render — prefer this in
- * components that only trigger connect/disconnect (buttons, menu items).
- */
-export const useWalletActions = (): WalletActions => {
-  const ctx = useContext(WalletActionsContext);
-  if (!ctx) throw new Error("useWalletActions must be used within a WalletProvider");
-  return ctx;
-};
-
-/**
- * Combined accessor, kept so existing call sites keep working. Returns the full
- * wallet context (state + actions + session metadata). Prefer `useWalletState`
- * or `useWalletActions` when a component only needs one half (#648).
- */
-export const useWallet = (): WalletContextType => {
+export const useWallet = () => {
   const ctx = useContext(WalletContext);
   if (!ctx) throw new Error("useWallet must be used within a WalletProvider");
   return ctx;

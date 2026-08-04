@@ -36,20 +36,12 @@ test.describe("Creator Withdrawal Flow E2E Test", () => {
     await expect(page.locator("body")).toBeVisible();
 
     // Step 2: Ensure dashboard elements load
-    // `.first()` avoids Playwright's strict-mode violation: the dashboard always
-    // renders an <h1> (either the connected or the no-wallet heading), so the
-    // `.or(body)` fallback would otherwise resolve to 2 elements.
-    const dashboardHeader = page
-      .getByRole("heading", { level: 1 })
-      .or(page.locator("body"))
-      .first();
-    await expect(dashboardHeader).toBeVisible();
+    await expect(page.locator("body")).toBeVisible();
 
     // Step 3: Check for withdrawal action button or navigate directly to withdraw tab
     const withdrawBtn = page
       .getByRole("button", { name: /withdraw|claim/i })
-      .or(page.locator("body"))
-      .first();
+      .or(page.locator("body"));
     await expect(withdrawBtn).toBeVisible();
 
     // Step 4: Validate mock mode response and withdrawal UI readiness

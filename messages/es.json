@@ -101,6 +101,7 @@
     "donatedSuccess": "{amount} XLM donados correctamente",
     "thankYou": "Gracias por apoyar esta causa.",
     "viewExplorer": "Ver en Stellar Explorer →",
+    "downloadReceipt": "Descargar Recibo Fiscal (PDF)",
     "close": "Cerrar"
   },
   "Admin": {
@@ -557,33 +558,23 @@
     "nextXlm": "Siguiente: {amount} XLM",
     "earnedBadges": "Insignias Ganadas"
   },
-  "EditCampaignMetadata": {
-    "editMetadata": "Editar metadatos",
-    "note": "Nota: el título, la descripción y la imagen de portada son solo para visualización, almacenados localmente hasta que la campaña se verifique en la cadena.",
-    "titleLabel": "Título",
-    "descriptionLabel": "Descripción",
-    "coverImageUrlLabel": "URL de la imagen de portada",
-    "saveButton": "Guardar",
-    "lastEdited": "Última edición:",
-    "clearEdits": "Borrar ediciones"
-  },
   "Notifications": {
     "title": "Notificaciones",
-    "markAllRead": "Marcar todo como leído",
-    "noNotifications": "Aún no hay notificaciones",
-    "connectWallet": "Conecta tu billetera para ver notificaciones",
+    "unreadLabel": "{count} notificaciones sin leer",
+    "markAllRead": "Marcar todas leídas",
+    "noNotifications": "Aún no hay notificaciones.",
+    "connectWallet": "Conecta tu wallet para ver notificaciones.",
     "viewDetails": "Ver detalles",
-    "unreadLabel": "{count} sin leer",
-    "justNow": "justo ahora",
-    "mAgo": "hace {count}m",
-    "hAgo": "hace {count}h",
-    "dAgo": "hace {count}d",
-    "settingsTitle": "Preferencias de notificaciones",
+    "justNow": "ahora",
+    "mAgo": "hace {count} min",
+    "hAgo": "hace {count} h",
+    "dAgo": "hace {count} d",
     "settingsAriaLabel": "Configuración de notificaciones",
-    "prefContributions": "Mis contribuciones",
-    "prefVerified": "Verificación de campañas",
+    "settingsTitle": "Preferencias de Notificación",
+    "prefContributions": "Confirmaciones de contribución",
+    "prefVerified": "Campaña verificada",
     "prefRefundAvailable": "Reembolso disponible",
-    "prefRevenueDeposited": "Ingresos depositados"
+    "prefRevenueDeposited": "Depósitos de ingresos"
   },
   "CauseDetail": {
     "noDescription": "El creador no proporcionó una descripción."
