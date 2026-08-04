@@ -40,7 +40,7 @@ test.describe("Creator Withdrawal Flow E2E Test", () => {
 
     // Step 3: Check for withdrawal action button or verify dashboard content loaded
     await expect(
-      page.getByRole("button", { name: /withdraw|claim/i }).or(page.locator("body"))
+      page.getByRole("button", { name: /withdraw|claim/i }).or(page.locator("body")),
     ).toBeVisible();
 
     // Step 4: Validate mock mode response and withdrawal UI readiness
