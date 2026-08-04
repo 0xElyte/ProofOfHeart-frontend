@@ -237,6 +237,22 @@ describe("app page components", () => {
     expect(await screen.findByRole("button", { name: /claim refund/i })).toBeInTheDocument();
   });
 
+  it("renders the empty-description fallback when the campaign description is blank", async () => {
+    mockUseCampaign.mockReturnValue({
+      campaign: makeCampaign({ description: "" }),
+      amountRaised: makeCampaign({ description: "" }).amount_raised,
+      isLoading: false,
+      error: null,
+      refetch: jest.fn(),
+    });
+
+    render(withQueryClient(<CauseDetailClient id="101" />));
+
+    expect(await screen.findByRole("heading", { name: "Solar Classroom" })).toBeInTheDocument();
+    // Blank markdown shows the "noDescription" placeholder instead of a gap
+    expect(await screen.findByRole("status")).toHaveTextContent("noDescription");
+  });
+
   it("renders the admin dashboard queue and aggregate campaign stats for the admin wallet", async () => {
     render(withQueryClient(<AdminClient />));
 

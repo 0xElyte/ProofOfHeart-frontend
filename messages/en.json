@@ -557,6 +557,34 @@
     "nextXlm": "Next: {amount} XLM",
     "earnedBadges": "Earned Badges"
   },
+  "EditCampaignMetadata": {
+    "editMetadata": "Edit metadata",
+    "note": "Note: title, description, and cover image are display-only — stored locally until the campaign is verified on-chain.",
+    "titleLabel": "Title",
+    "descriptionLabel": "Description",
+    "coverImageUrlLabel": "Cover Image URL",
+    "saveButton": "Save",
+    "lastEdited": "Last edited:",
+    "clearEdits": "Clear edits"
+  },
+  "Notifications": {
+    "title": "Notifications",
+    "markAllRead": "Mark all read",
+    "noNotifications": "No notifications yet",
+    "connectWallet": "Connect your wallet to see notifications",
+    "viewDetails": "View details",
+    "unreadLabel": "{count} unread",
+    "justNow": "just now",
+    "mAgo": "{count}m ago",
+    "hAgo": "{count}h ago",
+    "dAgo": "{count}d ago",
+    "settingsTitle": "Notification Preferences",
+    "settingsAriaLabel": "Notification settings",
+    "prefContributions": "My Contributions",
+    "prefVerified": "Campaign Verification",
+    "prefRefundAvailable": "Refund Available",
+    "prefRevenueDeposited": "Revenue Deposited"
+  },
   "CauseDetail": {
     "noDescription": "No description provided by the creator."
   },

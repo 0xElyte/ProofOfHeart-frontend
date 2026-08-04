@@ -37,13 +37,21 @@ jest.mock("@/components/DeadlineCountdown", () => ({
   default: () => <span data-testid="deadline-countdown" />,
 }));
 
+const mockToggleSaved = jest.fn();
+const mockShowWarning = jest.fn();
+
 jest.mock("@/hooks/useSavedCampaigns", () => ({
-  useSavedCampaigns: () => ({ isSaved: () => false, toggleSaved: jest.fn(), savedIds: [] }),
+  useSavedCampaigns: () => ({
+    isSaved: () => false,
+    toggleSaved: mockToggleSaved,
+    savedIds: [],
+  }),
 }));
 
 jest.mock("@/components/ToastProvider", () => ({
   useToast: () => ({
     showError: jest.fn(),
+    showWarning: mockShowWarning,
   }),
 }));
 
@@ -159,6 +167,44 @@ describe("progress percentage", () => {
   it("shows FundingProgressBar when goal is positive", () => {
     renderCard(makeCampaign({ funding_goal: BigInt(100_000_000) }));
     expect(screen.getByTestId("funding-progress-bar")).toBeInTheDocument();
+  });
+});
+
+// ── Save / bookmark button ─────────────────────────────────────────────────────
+
+describe("save button", () => {
+  beforeEach(() => {
+    mockToggleSaved.mockClear();
+    mockShowWarning.mockClear();
+  });
+
+  it("warns and does not save when no wallet is connected", () => {
+    renderCard(makeCampaign(), null);
+    fireEvent.click(screen.getByTitle("Save campaign"));
+    expect(mockShowWarning).toHaveBeenCalledWith("Please connect your wallet to save campaigns.");
+    expect(mockToggleSaved).not.toHaveBeenCalled();
+  });
+
+  it("toggles the saved state when a wallet is connected", () => {
+    renderCard(makeCampaign({ id: 9 }), CONTRIBUTOR);
+    fireEvent.click(screen.getByTitle("Save campaign"));
+    expect(mockToggleSaved).toHaveBeenCalledWith(9);
+    expect(mockShowWarning).not.toHaveBeenCalled();
+  });
+});
+
+// ── Cover image ───────────────────────────────────────────────────────────────
+
+describe("cover image", () => {
+  it("renders the cover image when the campaign has one", () => {
+    renderCard(makeCampaign({ cover_image_url: "/cover.png" }));
+    expect(screen.getByAltText("Test Campaign")).toBeInTheDocument();
+  });
+
+  it("falls back to the category icon when there is no cover image", () => {
+    renderCard(makeCampaign({ cover_image_url: undefined }));
+    // Category.Learner maps to an emoji icon rendered in the placeholder block
+    expect(screen.queryByAltText("Test Campaign")).not.toBeInTheDocument();
   });
 });
 

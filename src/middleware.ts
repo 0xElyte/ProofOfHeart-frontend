@@ -44,7 +44,24 @@ export default function middleware(req: NextRequest) {
     return NextResponse.redirect(url);
   }
 
+  // #569 — Generate a per-request CSP nonce so inline scripts (the theme
+  // blocking script in <head>) can be allow-listed without `'unsafe-inline'`.
+  const nonce = generateCspNonce();
+
+  // Propagate the nonce to the layout via a request header so it can attach the
+  // same value to the <script nonce="…"> attribute.
+  req.headers.set(CSP_NONCE_HEADER, nonce);
+
   const response = intlMiddleware(req);
+
+  // Apply strict CSP with the nonce. Next.js merges headers from middleware
+  // with those from next.config.ts; setting it here overrides the static value.
+  // Production-only: React's dev-mode debugging needs `unsafe-eval`, which
+  // strict CSP deliberately omits — so the header is only applied where it is
+  // safe to enforce (mirrors the HSTS guard below).
+  if (process.env.NODE_ENV === "production") {
+    response.headers.set("Content-Security-Policy", buildCspHeader(nonce));
+  }
 
   // #621 — Enforce HSTS on every response (including intl redirects) so that
   // browsers always upgrade HTTP to HTTPS and preload the domain.
@@ -53,7 +70,7 @@ export default function middleware(req: NextRequest) {
   if (process.env.NODE_ENV === "production") {
     response.headers.set(
       "Strict-Transport-Security",
-      "max-age=63072000; includeSubDomains; preload"
+      "max-age=63072000; includeSubDomains; preload",
     );
   }
 
