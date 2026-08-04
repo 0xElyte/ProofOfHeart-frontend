@@ -1,4 +1,5 @@
 import type { Schema } from "hast-util-sanitize";
+import { stripPrototypePollutionKeys } from "./rehypeNoPrototypePollution";
 
 /** Protocol and tag restrictions applied on top of rehype-sanitize defaults. */
 export const MARKDOWN_SANITIZE_OVERRIDES: Partial<Schema> = {
@@ -16,51 +17,25 @@ export const MARKDOWN_SANITIZE_OVERRIDES: Partial<Schema> = {
  * Called from SafeMarkdown at runtime so Jest can mock rehype-sanitize in integration tests.
  */
 export function buildMarkdownSanitizeSchema(defaultSchema: Schema): Schema {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const cleanAttributes = (attrs: Array<string | [string, ...any[]]>) => {
-    return attrs.filter((attr) => {
-      if (typeof attr === "string") {
-        return !attr.toLowerCase().startsWith("on");
-      }
-      if (Array.isArray(attr) && typeof attr[0] === "string") {
-        return !attr[0].toLowerCase().startsWith("on");
-      }
-      return true;
-    });
-  };
-
-  const mergedAttributes = {
-    ...defaultSchema.attributes,
-    ...MARKDOWN_SANITIZE_OVERRIDES.attributes,
-  };
-
-  const attributes = Object.fromEntries(
-    Object.entries(mergedAttributes).map(([tag, attrs]) => [
-      tag,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      cleanAttributes(attrs as Array<string | [string, ...any[]]>),
-    ]),
-  );
-
-  const mergedProtocols = {
-    ...defaultSchema.protocols,
-    ...MARKDOWN_SANITIZE_OVERRIDES.protocols,
-  };
-
-  const protocols = Object.fromEntries(
-    Object.entries(mergedProtocols).map(([key, list]) => [
-      key,
-      (list ?? []).filter((proto) => {
-        const lower = proto.toLowerCase();
-        return lower !== "javascript" && lower !== "data" && lower !== "vbscript";
-      }),
-    ]),
-  );
-
-  return {
+  const schema: Schema = {
     ...defaultSchema,
     ...MARKDOWN_SANITIZE_OVERRIDES,
-    protocols,
-    attributes,
+    protocols: {
+      ...defaultSchema.protocols,
+      ...MARKDOWN_SANITIZE_OVERRIDES.protocols,
+    },
+    attributes: {
+      ...defaultSchema.attributes,
+      a: (defaultSchema.attributes?.a ?? []).filter((attr: string | readonly unknown[]) =>
+        typeof attr === "string" ? !attr.toLowerCase().startsWith("on") : true,
+      ),
+      img: (defaultSchema.attributes?.img ?? []).filter((attr: string | readonly unknown[]) =>
+        typeof attr === "string" ? !attr.toLowerCase().startsWith("on") : true,
+      ),
+    },
   };
+
+  // #634 — never let a prototype-polluting key survive in the schema that is
+  // spread onto rendered nodes.
+  return stripPrototypePollutionKeys(schema);
 }
