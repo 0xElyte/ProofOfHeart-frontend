@@ -40,12 +40,7 @@ const NETWORK_PASSPHRASE =
   process.env.NEXT_PUBLIC_NETWORK_PASSPHRASE ?? "Test SDF Network ; September 2015";
 
 export type TransactionLifecyclePhase =
-  | "building"
-  | "signing"
-  | "submitting"
-  | "confirming"
-  | "confirmed"
-  | "failed";
+  "building" | "signing" | "submitting" | "confirming" | "confirmed" | "failed";
 
 export interface TransactionLifecycleUpdate {
   phase: TransactionLifecyclePhase;
@@ -1123,10 +1118,6 @@ export async function getApprovalThresholdBps(): Promise<number> {
 }
 
 /**
- * Cast a vote on a campaign via Freighter wallet.
- * approve = true → upvote, approve = false → downvote.
- */
-/**
  * Set or update a personal contribution cap for a campaign.
  * Pass BigInt(0) to remove the cap (unlimited).
  * Returns the transaction hash on success.
@@ -1172,6 +1163,10 @@ export async function setPersonalCap(
   }
 }
 
+/**
+ * Cast a vote on a campaign via Freighter wallet.
+ * approve = true → upvote, approve = false → downvote.
+ */
 export async function voteOnCampaign(
   campaignId: number,
   voter: string,

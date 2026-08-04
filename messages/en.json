@@ -497,5 +497,24 @@
     "createdCampaigns": "Created Campaigns",
     "noSavedCampaigns": "No saved campaigns yet.",
     "browseCauses": "Browse causes"
+  },
+  "PersonalCap": {
+    "title": "Personal Cap",
+    "loading": "Loading…",
+    "description": "Set a self-imposed spending limit for this campaign. Your total contribution will not exceed this cap.",
+    "currentCapLabel": "Current cap:",
+    "contributedSoFar": "You have contributed {amount} XLM so far.",
+    "noCapSet": "No cap set — contributions are unlimited.",
+    "currentContributionLabel": "Current contribution:",
+    "amountPlaceholder": "Cap amount in XLM",
+    "amountAriaLabel": "Personal cap amount in XLM",
+    "setCap": "Set Cap",
+    "setting": "Setting…",
+    "removeCap": "Remove Cap",
+    "removing": "Removing…",
+    "capBelowContribution": "⚠️ This cap is below your current contribution of {amount} XLM. The on-chain cap will still be set, but it won't retroactively reduce your existing contribution.",
+    "positiveAmountWarning": "Please enter a positive amount.",
+    "capSetSuccess": "Personal cap set to {amount} XLM.",
+    "capRemovedSuccess": "Personal cap removed. Your contributions are now unlimited."
   }
 }

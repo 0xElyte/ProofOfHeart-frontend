@@ -497,5 +497,24 @@
     "createdCampaigns": "Campañas creadas",
     "noSavedCampaigns": "Aún no tienes campañas guardadas.",
     "browseCauses": "Explorar causas"
+  },
+  "PersonalCap": {
+    "title": "Límite Personal",
+    "loading": "Cargando…",
+    "description": "Establece un límite de gasto autoimpuesto para esta campaña. Tu contribución total no excederá este límite.",
+    "currentCapLabel": "Límite actual:",
+    "contributedSoFar": "Has contribuido {amount} XLM hasta ahora.",
+    "noCapSet": "No hay límite establecido: las contribuciones son ilimitadas.",
+    "currentContributionLabel": "Contribución actual:",
+    "amountPlaceholder": "Monto del límite en XLM",
+    "amountAriaLabel": "Monto del límite personal en XLM",
+    "setCap": "Establecer Límite",
+    "setting": "Estableciendo…",
+    "removeCap": "Quitar Límite",
+    "removing": "Quitando…",
+    "capBelowContribution": "⚠️ Este límite está por debajo de tu contribución actual de {amount} XLM. El límite en cadena se establecerá igualmente, pero no reducirá retroactivamente tu contribución existente.",
+    "positiveAmountWarning": "Por favor, ingresa un monto positivo.",
+    "capSetSuccess": "Límite personal establecido en {amount} XLM.",
+    "capRemovedSuccess": "Límite personal eliminado. Tus contribuciones ahora son ilimitadas."
   }
 }

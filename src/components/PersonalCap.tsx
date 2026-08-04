@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useCallback } from "react";
+import { useTranslations, useLocale } from "next-intl";
+import { formatNumber } from "@/lib/formatters";
 import { setPersonalCap } from "../lib/contractClient";
 import { usePersonalCap } from "../hooks/usePersonalCap";
 import { useContribution } from "../hooks/useContribution";
@@ -15,10 +17,19 @@ interface PersonalCapProps {
 }
 
 export default function PersonalCap({ campaignId }: PersonalCapProps) {
+  const t = useTranslations("PersonalCap");
+  const locale = useLocale();
   const { publicKey: userWalletAddress } = useWallet();
   const { showError, showSuccess, showWarning } = useToast();
-  const { personalCap, isLoading, refetch: refetchCap } = usePersonalCap(campaignId, userWalletAddress);
-  const { contribution, isLoading: isLoadingContribution } = useContribution(campaignId, userWalletAddress);
+  const {
+    personalCap,
+    isLoading,
+    refetch: refetchCap,
+  } = usePersonalCap(campaignId, userWalletAddress);
+  const { contribution, isLoading: isLoadingContribution } = useContribution(
+    campaignId,
+    userWalletAddress,
+  );
 
   const [capInput, setCapInput] = useState("");
   const [isSetting, setIsSetting] = useState(false);
@@ -37,25 +48,25 @@ export default function PersonalCap({ campaignId }: PersonalCapProps) {
   })();
 
   const isBelowContribution =
-    parsedInput !== null &&
-    contribution > BigInt(0) &&
-    parsedInput < currentContributionXlm;
+    parsedInput !== null && contribution > BigInt(0) && parsedInput < currentContributionXlm;
+  const formatXlm = useCallback(
+    (value: number) => formatNumber(value, locale, { maximumFractionDigits: 7 }),
+    [locale],
+  );
 
   const handleSetCap = useCallback(async () => {
     if (!userWalletAddress || parsedInput === null) return;
 
     const capStroops = xlmToStroops(parsedInput.toString());
     if (capStroops <= BigInt(0)) {
-      showWarning("Please enter a positive amount.");
+      showWarning(t("positiveAmountWarning"));
       return;
     }
 
     setIsSetting(true);
     try {
       await setPersonalCap(campaignId, userWalletAddress, capStroops);
-      showSuccess(
-        `Personal cap set to ${stroopsToXlmNumber(capStroops).toLocaleString(undefined, { maximumFractionDigits: 7 })} XLM.`,
-      );
+      showSuccess(t("capSetSuccess", { amount: formatXlm(stroopsToXlmNumber(capStroops)) }));
       setCapInput("");
       refetchCap();
     } catch (err) {
@@ -63,7 +74,17 @@ export default function PersonalCap({ campaignId }: PersonalCapProps) {
     } finally {
       setIsSetting(false);
     }
-  }, [userWalletAddress, parsedInput, campaignId, showSuccess, showError, showWarning, refetchCap]);
+  }, [
+    userWalletAddress,
+    parsedInput,
+    campaignId,
+    showSuccess,
+    showError,
+    showWarning,
+    refetchCap,
+    t,
+    formatXlm,
+  ]);
 
   const handleRemoveCap = useCallback(async () => {
     if (!userWalletAddress) return;
@@ -71,63 +92,47 @@ export default function PersonalCap({ campaignId }: PersonalCapProps) {
     setIsRemoving(true);
     try {
       await setPersonalCap(campaignId, userWalletAddress, BigInt(0));
-      showSuccess("Personal cap removed. Your contributions are now unlimited.");
+      showSuccess(t("capRemovedSuccess"));
       refetchCap();
     } catch (err) {
       showError(parseContractError(err));
     } finally {
       setIsRemoving(false);
     }
-  }, [userWalletAddress, campaignId, showSuccess, showError, refetchCap]);
+  }, [userWalletAddress, campaignId, showSuccess, showError, refetchCap, t]);
 
   if (!userWalletAddress) return null;
   if (isLoading || isLoadingContribution) {
     return (
       <div className="bg-white dark:bg-zinc-800 rounded-xl shadow-sm border border-zinc-200 dark:border-zinc-700 p-5">
-        <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50 mb-3">
-          Personal Cap
-        </h2>
-        <p className="text-xs text-zinc-500 dark:text-zinc-400">Loading…</p>
+        <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50 mb-3">{t("title")}</h2>
+        <p className="text-xs text-zinc-500 dark:text-zinc-400">{t("loading")}</p>
       </div>
     );
   }
 
   return (
     <div className="bg-white dark:bg-zinc-800 rounded-xl shadow-sm border border-zinc-200 dark:border-zinc-700 p-5">
-      <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50 mb-3">
-        Personal Cap
-      </h2>
+      <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50 mb-3">{t("title")}</h2>
 
-      <p className="text-xs text-zinc-500 dark:text-zinc-400 mb-3">
-        Set a self-imposed spending limit for this campaign. Your total contribution
-        will not exceed this cap.
-      </p>
+      <p className="text-xs text-zinc-500 dark:text-zinc-400 mb-3">{t("description")}</p>
 
       {/* Current cap display */}
       {hasCap ? (
         <div className="mb-4 rounded-lg bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800 p-3">
           <p className="text-xs text-blue-700 dark:text-blue-300 font-medium">
-            Current cap:{" "}
-            <span className="font-bold">
-              {currentCapXlm.toLocaleString(undefined, { maximumFractionDigits: 7 })} XLM
-            </span>
+            {t("currentCapLabel")} <span className="font-bold">{formatXlm(currentCapXlm)} XLM</span>
           </p>
           <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">
-            You have contributed{" "}
-            {currentContributionXlm.toLocaleString(undefined, { maximumFractionDigits: 7 })}{" "}
-            XLM so far.
+            {t("contributedSoFar", { amount: formatXlm(currentContributionXlm) })}
           </p>
         </div>
       ) : (
         <div className="mb-4 rounded-lg bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 p-3">
-          <p className="text-xs text-zinc-600 dark:text-zinc-400">
-            No cap set — contributions are unlimited.
-          </p>
+          <p className="text-xs text-zinc-600 dark:text-zinc-400">{t("noCapSet")}</p>
           {contribution > BigInt(0) && (
             <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
-              Current contribution:{" "}
-              {currentContributionXlm.toLocaleString(undefined, { maximumFractionDigits: 7 })}{" "}
-              XLM
+              {t("currentContributionLabel")} {formatXlm(currentContributionXlm)} XLM
             </p>
           )}
         </div>
@@ -141,11 +146,11 @@ export default function PersonalCap({ campaignId }: PersonalCapProps) {
             inputMode="decimal"
             min="0"
             step="any"
-            placeholder="Cap amount in XLM"
+            placeholder={t("amountPlaceholder")}
             value={capInput}
             onChange={(e) => setCapInput(e.target.value)}
             className="flex-1 min-w-0 rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-700 px-3 py-2 text-sm text-zinc-900 dark:text-zinc-50 placeholder:text-zinc-400 dark:placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-shadow"
-            aria-label="Personal cap amount in XLM"
+            aria-label={t("amountAriaLabel")}
           />
           <button
             onClick={handleSetCap}
@@ -154,8 +159,8 @@ export default function PersonalCap({ campaignId }: PersonalCapProps) {
           >
             <AsyncButtonContent
               isPending={isSetting}
-              idleLabel="Set Cap"
-              pendingLabel="Setting…"
+              idleLabel={t("setCap")}
+              pendingLabel={t("setting")}
             />
           </button>
         </div>
@@ -164,10 +169,7 @@ export default function PersonalCap({ campaignId }: PersonalCapProps) {
         {isBelowContribution && (
           <div className="rounded-lg border border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-950/40 p-2.5">
             <p className="text-xs text-amber-700 dark:text-amber-300">
-              ⚠️ This cap is below your current contribution of{" "}
-              {currentContributionXlm.toLocaleString(undefined, { maximumFractionDigits: 7 })}{" "}
-              XLM. The on-chain cap will still be set, but it won&apos;t retroactively
-              reduce your existing contribution.
+              {t("capBelowContribution", { amount: formatXlm(currentContributionXlm) })}
             </p>
           </div>
         )}
@@ -181,8 +183,8 @@ export default function PersonalCap({ campaignId }: PersonalCapProps) {
           >
             <AsyncButtonContent
               isPending={isRemoving}
-              idleLabel="Remove Cap"
-              pendingLabel="Removing…"
+              idleLabel={t("removeCap")}
+              pendingLabel={t("removing")}
             />
           </button>
         )}
