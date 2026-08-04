@@ -1,23 +1,3 @@
-'use client';
-
-import Link from 'next/link';
-import { useState, useEffect } from 'react';
-import CampaignActions from '@/components/CampaignActions';
-import CampaignDescription from '@/components/CampaignDescription';
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
-import rehypeSanitize from 'rehype-sanitize';
-import CampaignStatusBadge from '@/components/CampaignStatusBadge';
-import DeadlineCountdown from '@/components/DeadlineCountdown';
-import DonationModal from '@/components/DonationModal';
-import FundingProgressBar from '@/components/FundingProgressBar';
-import RevenueSharingPanel from '@/components/RevenueSharingPanel';
-import UpdatesSection from '@/components/UpdatesSection';
-import { useToast } from '@/components/ToastProvider';
-import VotingComponent from '@/components/VotingComponent';
-import { useWallet } from '@/components/WalletContext';
-import { useCampaign } from '@/hooks/useCampaign';
-import { usePlatformFee } from '@/hooks/usePlatformFee';
 "use client";
 
 import Link from "next/link";
@@ -60,21 +40,6 @@ import {
   verifyCampaignWithVotes,
   getContribution,
   claimRefund,
-} from '@/lib/contractClient';
-import VotingComponent from '@/components/VotingComponent';
-import CampaignStatusBadge from '@/components/CampaignStatusBadge';
-import DeadlineCountdown from '@/components/DeadlineCountdown';
-import FundingProgressBar from '@/components/FundingProgressBar';
-import { useWallet } from '@/components/WalletContext';
-import CampaignActions from '@/components/CampaignActions';
-import RevenueSharingPanel from '@/components/RevenueSharingPanel';
-import DonationModal from '@/components/DonationModal';
-import { Campaign, Vote, CATEGORY_LABELS, stroopsToXlm } from '@/types';
-import { parseContractError } from '@/utils/contractErrors';
-
-function formatDate(ts: number) {
-  return new Intl.DateTimeFormat('en-US', { year: 'numeric', month: 'long', day: 'numeric' }).format(new Date(ts * 1000));
-}
   cancelCampaign,
 } from "@/lib/contractClient";
 import { useTranslations, useLocale } from "next-intl";
@@ -360,12 +325,6 @@ export default function CauseDetailClient({ id }: { id: string }) {
                 </span>
                 <CampaignStatusBadge campaign={campaign} />
               </div>
-              <h1 className="text-2xl sm:text-3xl font-bold text-zinc-900 dark:text-zinc-50 mb-4 leading-tight">{campaign.title}</h1>
-              <CampaignDescription description={campaign.description}>
-                <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeSanitize]}>
-                  {campaign.description}
-                </ReactMarkdown>
-              </CampaignDescription>
               {campaign.cover_image_url && (
                 <div className="relative w-full aspect-video rounded-lg overflow-hidden mb-4 bg-zinc-100 dark:bg-zinc-700">
                   <Image
@@ -612,7 +571,7 @@ export default function CauseDetailClient({ id }: { id: string }) {
               isVerifying={isVerifying}
             />
 
-            {campaign.is_active && !campaign.is_cancelled && (
+            {campaign.is_active && campaign.is_verified && !campaign.is_cancelled && (
               <button
                 onClick={() => {
                   if (!userWalletAddress) {
@@ -625,6 +584,25 @@ export default function CauseDetailClient({ id }: { id: string }) {
               >
                 💜 Fund This Cause
               </button>
+            )}
+
+            {campaign.is_active && !campaign.is_verified && !campaign.is_cancelled && (
+              <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 dark:border-amber-700 dark:bg-amber-950/40">
+                <div className="flex items-center gap-3">
+                  <span className="text-amber-600 dark:text-amber-400 text-lg" aria-hidden="true">
+                    ⏳
+                  </span>
+                  <div>
+                    <p className="text-sm font-semibold text-amber-800 dark:text-amber-200">
+                      Pending Verification
+                    </p>
+                    <p className="text-xs text-amber-700 dark:text-amber-300 mt-1">
+                      This campaign is awaiting verification. Donations will be enabled once
+                      verified by the community or an admin.
+                    </p>
+                  </div>
+                </div>
+              </div>
             )}
 
             <CampaignActions campaign={campaign} onActionSuccess={refetch} />
