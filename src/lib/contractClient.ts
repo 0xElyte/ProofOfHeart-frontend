@@ -95,6 +95,10 @@ const CONNECTION_ERROR_PATTERNS = [
   "etimedout",
   "enotfound",
   "eai_again",
+  // These three are deliberately broad. They also match a user-cancelled abort
+  // and our own poll timeout, neither of which is a transport failure. The only
+  // consequence is an unnecessary reconnect on the next call, which is cheaper
+  // than holding on to a client that a real timeout has left unusable.
   "timeout",
   "timed out",
   "aborted",
