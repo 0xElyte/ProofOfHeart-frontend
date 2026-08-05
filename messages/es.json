@@ -255,7 +255,9 @@
     "tryDifferentSearch": "Intenta con otros términos de búsqueda o borra los filtros para ver todas las causas.",
     "tryAgain": "Intentar de nuevo",
     "loadMore": "Cargar más causas",
-    "showingRange": "Mostrando {shown} de {total}"
+    "showingRange": "Mostrando {shown} de {total}",
+    "listView": "Vista de lista",
+    "mapView": "Vista de mapa"
   },
   "Status": {
     "active": "Activa",
@@ -275,6 +277,9 @@
     "placeholderTitle": "Un t\u00edtulo claro y convincente para tu campa\u00f1a",
     "labelDescription": "Descripci\u00f3n",
     "placeholderDescription": "Describe tu campa\u00f1a, qu\u00e9 pretende lograr y c\u00f3mo se utilizar\u00e1n los fondos",
+    "tabWrite": "Escribir",
+    "tabPreview": "Vista previa",
+    "nothingToPreview": "Nada que previsualizar",
     "labelCreatorEmailOptional": "Email del Creador (Opcional)",
     "placeholderCreatorEmail": "nombre@ejemplo.com",
     "creatorEmailNote": "Opcional, solo fuera de la cadena. Se usa para notificaciones de hitos y vencimiento de campa\u00f1a.",
@@ -287,6 +292,8 @@
     "revenueSharingDesc": "Permite a los contribuyentes ganar una parte de los ingresos futuros.",
     "revenueSharingAriaLabel": "Participaci\u00f3n en Ingresos",
     "labelRevenueSharePct": "Porcentaje de Participaci\u00f3n en Ingresos",
+    "labelExactBps": "Puntos base exactos:",
+    "revenueShareBpsDenominator": "/ 10.000",
     "cancel": "Cancelar",
     "launchCampaign": "Lanzar Campa\u00f1a",
     "reviewTitle": "Revisar Campa\u00f1a Antes de Firmar",
