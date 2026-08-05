@@ -343,6 +343,30 @@ describe("contractClient", () => {
     await expect(module.getCampaignCount()).rejects.toThrow("fetch failed");
   });
 
+  it("listCampaigns drops a page member whose fetch rejects instead of failing the whole page", async () => {
+    const { module, mockServer, stellarSdkMock } = await loadClient({ useMocks: false });
+    const scVal = makeScValHelpers();
+
+    mockServer.simulateTransaction.mockImplementation(
+      (tx: { ops?: Array<{ method?: string; args?: unknown[] }> }) => {
+        const op = tx.ops?.[0];
+        if (op?.method === "get_campaign_count") return { result: { retval: scVal.u32(3) } };
+        if (op?.method === "get_campaign") {
+          const id = (op.args?.[0] as { u32: () => number }).u32();
+          if (id === 2) throw new Error("simulated RPC blip for campaign 2");
+          return { result: { retval: stellarSdkMock.__campaignFixture } };
+        }
+        return { result: { retval: null } };
+      },
+    );
+
+    const page = await module.listCampaigns({ cursor: 1, limit: 3 });
+
+    expect(page.campaigns.map((c) => c.id)).toEqual([7, 7]);
+    expect(page.campaigns).toHaveLength(2);
+    expect(page.nextCursor).toBeNull();
+  });
+
   it("non-mock branch runs core read/write flows with mocked SDK", async () => {
     const { module } = await loadClient({ useMocks: false });
 

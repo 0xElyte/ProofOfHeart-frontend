@@ -595,9 +595,86 @@ const MOCK_CAMPAIGNS: Campaign[] = [
   }),
 ];
 
+// #593 — a handful of hand-written campaigns isn't enough to exercise
+// virtual scrolling / infinite pagination in dev mode. Extend the curated
+// set with a deterministic, generated batch so `NEXT_PUBLIC_USE_MOCKS=true`
+// has 100+ campaigns to page through, same as production eventually will.
+const GENERATED_MOCK_COUNT = 114;
+const CATEGORY_CYCLE = Object.values(Category).filter((v): v is Category => typeof v === "number");
+
+for (let i = 0; i < GENERATED_MOCK_COUNT; i++) {
+  const id = MOCK_CAMPAIGNS.length + 1;
+  MOCK_CAMPAIGNS.push(
+    makeMockCampaign({
+      id,
+      title: `Community Project #${id}`,
+      description: `Generated mock campaign #${id} for exercising pagination and virtual scrolling.`,
+      creator:
+        `GMOCK${String(id).padStart(4, "0")}56789012345678901234567890123456789012345678901234567890`.slice(
+          0,
+          56,
+        ),
+      funding_goal: BigInt(10_000_000_000 + id * 1_000_000_000),
+      deadline: MOCK_TIMESTAMP_SEC + 86400 * (10 + (id % 60)),
+      amount_raised: BigInt((id % 7) * 3_000_000_000),
+      is_active: id % 11 !== 0,
+      funds_withdrawn: false,
+      is_cancelled: id % 17 === 0,
+      is_verified: id % 3 !== 0,
+      created_at: MOCK_TIMESTAMP_SEC + id,
+      category: CATEGORY_CYCLE[id % CATEGORY_CYCLE.length],
+      has_revenue_sharing: id % 4 === 0,
+      revenue_share_percentage: id % 4 === 0 ? 200 + (id % 5) * 100 : 0,
+    }),
+  );
+}
+
 // ---------------------------------------------------------------------------
 // Public API — Read (view) functions
 // ---------------------------------------------------------------------------
+
+export const DEFAULT_CAMPAIGNS_PAGE_SIZE = 12;
+
+export interface CampaignsPage {
+  campaigns: Campaign[];
+  /** Id of the next campaign to fetch, or null once every campaign has been returned. */
+  nextCursor: number | null;
+}
+
+/**
+ * Cursor-paginated campaign listing (issue #593). The contract only exposes
+ * sequential numeric ids (`get_campaign_count` + `get_campaign(id)`), so the
+ * cursor here is simply "the next id to fetch" — opaque to the caller, which
+ * is all `useInfiniteQuery` needs.
+ */
+export async function listCampaigns({
+  cursor = 1,
+  limit = DEFAULT_CAMPAIGNS_PAGE_SIZE,
+}: { cursor?: number; limit?: number } = {}): Promise<CampaignsPage> {
+  if (USE_MOCKS) {
+    const startIndex = cursor - 1;
+    const campaigns = MOCK_CAMPAIGNS.slice(startIndex, startIndex + limit);
+    const nextCursor = startIndex + limit < MOCK_CAMPAIGNS.length ? cursor + limit : null;
+    return { campaigns, nextCursor };
+  }
+  try {
+    const count = await getCampaignCount();
+    const lastIdExclusive = Math.min(cursor + limit, count + 1);
+    const ids = Array.from({ length: Math.max(0, lastIdExclusive - cursor) }, (_, i) => cursor + i);
+    const results = await Promise.allSettled(ids.map((id) => getCampaign(id)));
+    const campaigns = results.flatMap((r) => {
+      if (r.status === "rejected") {
+        console.warn("Failed to fetch campaign for listCampaigns page", r.reason);
+        return [];
+      }
+      return r.value !== null ? [r.value] : [];
+    });
+    const nextCursor = cursor + limit <= count ? cursor + limit : null;
+    return { campaigns, nextCursor };
+  } catch (err) {
+    throw new Error(parseContractError(err));
+  }
+}
 
 export async function getCampaignCount(): Promise<number> {
   if (USE_MOCKS) return MOCK_CAMPAIGNS.length;

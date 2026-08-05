@@ -48,11 +48,14 @@ jest.mock("@/i18n/routing", () => ({
   useRouter: () => mockRouter,
 }));
 
-jest.mock("@/hooks/useCampaigns", () => ({
-  useCampaigns: () => ({
+jest.mock("@/hooks/useInfiniteCampaigns", () => ({
+  useInfiniteCampaigns: () => ({
     campaigns: mockCampaigns,
     isLoading: false,
+    isFetchingNextPage: false,
+    hasNextPage: false,
     error: null,
+    fetchNextPage: jest.fn(),
     refetch: jest.fn(),
   }),
 }));
