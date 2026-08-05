@@ -66,6 +66,11 @@ const HEX_ALLOWLIST = new Set(
     // globals.css (or any app chrome) so it still renders if the CSS build
     // itself is the reason the site is down.
     "app/maintenance/page.tsx",
+    // Tax receipt is a standalone HTML string opened in a new browser
+    // window (window.open + document.write-style rendering), entirely
+    // outside the app's component tree — CSS custom properties from
+    // globals.css are never in scope there.
+    "lib/taxReceipt.ts",
     // Official multi-colour Google "G" logomark — must stay literal, a
     // themed recolour would no longer be the Google brand mark.
     "components/SocialLoginButtons.tsx",
