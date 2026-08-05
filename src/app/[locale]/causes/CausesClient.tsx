@@ -263,7 +263,7 @@ function CausesContent() {
           },
         );
         showSuccess(
-          `Your vote has been cast successfully. <a href="${explorerTxUrl(transactionHash)}" target="_blank" rel="noopener noreferrer" style="color:#2563eb;text-decoration:underline;">View on Explorer</a>`,
+          `Your vote has been cast successfully. <a href="${explorerTxUrl(transactionHash)}" target="_blank" rel="noopener noreferrer" style="color:var(--color-brand);text-decoration:underline;">View on Explorer</a>`,
         );
       } catch (error) {
         showError(getAsyncActionErrorMessage(error, parseContractError));
