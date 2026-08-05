@@ -588,8 +588,14 @@ export async function listCampaigns({
     const count = await getCampaignCount();
     const lastIdExclusive = Math.min(cursor + limit, count + 1);
     const ids = Array.from({ length: Math.max(0, lastIdExclusive - cursor) }, (_, i) => cursor + i);
-    const results = await Promise.all(ids.map((id) => getCampaign(id)));
-    const campaigns = results.filter((c): c is Campaign => c !== null);
+    const results = await Promise.allSettled(ids.map((id) => getCampaign(id)));
+    const campaigns = results.flatMap((r) => {
+      if (r.status === "rejected") {
+        console.warn("Failed to fetch campaign for listCampaigns page", r.reason);
+        return [];
+      }
+      return r.value !== null ? [r.value] : [];
+    });
     const nextCursor = cursor + limit <= count ? cursor + limit : null;
     return { campaigns, nextCursor };
   } catch (err) {

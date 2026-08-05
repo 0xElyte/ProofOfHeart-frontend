@@ -236,6 +236,8 @@
     "labelCategory": "Categoría",
     "labelStatus": "Estado",
     "labelSortBy": "Ordenar por",
+    "listView": "Lista",
+    "mapView": "Mapa",
     "all": "Todas",
     "allCategories": "Todas las Categorías",
     "categoryChipAriaSelected": "{label}, {count} causas, seleccionada",

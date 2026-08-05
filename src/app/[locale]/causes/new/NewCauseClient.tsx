@@ -3,6 +3,7 @@
 import { useTranslations } from "next-intl";
 import SafeMarkdown from "@/components/SafeMarkdown";
 import { useState, useEffect, useRef } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { validateImageFile } from "@/lib/imageValidation";
 import { useToast } from "@/components/ToastProvider";
 import { useWallet } from "@/components/WalletContext";
@@ -12,6 +13,7 @@ import {
   getCampaignCount,
   type TransactionLifecyclePhase,
 } from "@/lib/contractClient";
+import { invalidateCampaignsList } from "@/lib/cacheInvalidation";
 import { Category, CATEGORY_LABELS } from "@/types";
 import { xlmToStroops } from "@/lib/stellarAmount";
 import { parseContractError } from "@/utils/contractErrors";
@@ -104,6 +106,7 @@ function validateForm(
 export default function CreateCampaignPage() {
   const t = useTranslations("CreateCampaign");
   const router = useRouter();
+  const queryClient = useQueryClient();
   const { publicKey, isWalletConnected, connectWallet, isLoading: walletLoading } = useWallet();
   const { showError, showSuccess, showWarning } = useToast();
 
@@ -321,6 +324,7 @@ export default function CreateCampaignPage() {
       }
 
       await notifyEmailOptIn(newCampaignId, reviewData.creatorEmail, reviewData.title, publicKey);
+      invalidateCampaignsList(queryClient);
 
       showSuccess(t("successMessage", { title: reviewData.title }));
       setIsReviewOpen(false);
