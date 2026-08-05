@@ -134,12 +134,14 @@ describe("Causes filters URL sync", () => {
     expect(sortSelect).toHaveValue("most_funded");
   });
 
-  it("shows live category counts on filter chips", () => {
+  it("shows live category counts on filter chips", async () => {
     render(<CausesClient />);
 
-    expect(
-      screen.getByRole("button", { name: "All Categories, 1 causes, selected" }),
-    ).toHaveTextContent("1");
+    await waitFor(() => {
+      expect(
+        screen.getByRole("button", { name: "All Categories, 1 causes, selected" }),
+      ).toHaveTextContent("1");
+    });
     expect(screen.getByRole("button", { name: "Learner, 1 causes" })).toHaveTextContent("1");
     expect(screen.getByRole("button", { name: "Educational Startup, 0 causes" })).toHaveTextContent(
       "0",

@@ -4,7 +4,7 @@ import dynamic from "next/dynamic";
 import { useSearchParams } from "next/navigation";
 import { Search } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { useState, useEffect, useCallback, useMemo, Suspense } from "react";
+import { useState, useEffect, useCallback, useMemo, Suspense, useRef } from "react";
 import { MapIcon, ListIcon } from "lucide-react";
 import CauseCard from "@/components/CauseCard";
 import { CauseCardSkeleton } from "@/components/Skeleton";
@@ -98,6 +98,13 @@ function CausesContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
+  const mountedRef = useRef(true);
+  useEffect(() => {
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
+
   const [rawSearch, setRawSearch] = useState(searchParams.get("q") ?? "");
   const [category, setCategory] = useState(searchParams.get("category") ?? "all");
   const [status, setStatus] = useState(searchParams.get("status") ?? "all");
@@ -184,7 +191,9 @@ function CausesContent() {
         }
       }),
     );
-    setUserVotes(votes);
+    if (mountedRef.current) {
+      setUserVotes(votes);
+    }
   }, [userWalletAddress, campaigns]);
 
   const loadVoteCounts = useCallback(async () => {
@@ -206,7 +215,9 @@ function CausesContent() {
         }
       }),
     );
-    setVoteCounts(counts);
+    if (mountedRef.current) {
+      setVoteCounts(counts);
+    }
   }, [campaigns]);
 
   useEffect(() => {
