@@ -1,4 +1,4 @@
-import { act, render, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import CausesClient from "@/app/[locale]/causes/CausesClient";
 import { Category, type Campaign } from "@/types";
@@ -74,9 +74,9 @@ jest.mock("@/lib/contractClient", () => ({
   claimRefund: jest.fn(),
   voteOnCampaign: jest.fn(),
   hasVoted: jest.fn(),
-  getApproveVotes: jest.fn(() => Promise.resolve(0)),
-  getRejectVotes: jest.fn(() => Promise.resolve(0)),
-  getAllCampaigns: jest.fn(() => Promise.resolve([])),
+  getApproveVotes: jest.fn().mockResolvedValue(0),
+  getRejectVotes: jest.fn().mockResolvedValue(0),
+  getAllCampaigns: jest.fn().mockResolvedValue([]),
 }));
 
 jest.mock("@/components/CauseCard", () => ({
@@ -91,13 +91,21 @@ describe("Causes filters URL sync", () => {
     mockUseSearchParams.mockReturnValue(new URLSearchParams(""));
   });
 
-  afterEach(() => {
+  afterEach(async () => {
+    // Flush all pending microtasks so async state updates (e.g. setVoteCounts)
+    // resolve inside the current act() scope and don't leak into the next test.
+    await act(async () => {
+      await Promise.resolve();
+    });
+    cleanup();
     jest.useRealTimers();
   });
 
   it("syncs category, status, sort and search to URL", async () => {
     const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime });
-    render(<CausesClient />);
+    await act(async () => {
+      render(<CausesClient />);
+    });
 
     const [statusSelect, sortSelect] = screen.getAllByRole("combobox");
     await user.click(screen.getByRole("button", { name: "Learner, 1 causes" }));
@@ -122,7 +130,9 @@ describe("Causes filters URL sync", () => {
       new URLSearchParams("q=astro&category=2&status=funded&sort=most_funded"),
     );
 
-    render(<CausesClient />);
+    await act(async () => {
+      render(<CausesClient />);
+    });
     const [statusSelect, sortSelect] = screen.getAllByRole("combobox");
 
     expect(await screen.findByDisplayValue("astro")).toBeInTheDocument();
@@ -135,7 +145,9 @@ describe("Causes filters URL sync", () => {
   });
 
   it("shows live category counts on filter chips", async () => {
-    render(<CausesClient />);
+    await act(async () => {
+      render(<CausesClient />);
+    });
 
     await waitFor(() => {
       expect(

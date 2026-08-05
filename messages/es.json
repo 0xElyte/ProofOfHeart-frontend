@@ -233,6 +233,8 @@
     "pageTitle": "Causas Comunitarias",
     "pageSubtitle": "Explora, busca y vota por las causas que te importan.",
     "searchPlaceholder": "Buscar causas por título, descripción o categoría…",
+    "listView": "Vista de Lista",
+    "mapView": "Vista de Mapa",
     "labelCategory": "Categoría",
     "labelStatus": "Estado",
     "labelSortBy": "Ordenar por",
