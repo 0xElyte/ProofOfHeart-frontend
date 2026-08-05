@@ -326,7 +326,11 @@
     "coverImageUploading": "Uploading…",
     "coverImageUploadSuccess": "Cover image uploaded to IPFS.",
     "coverImageUploadFailed": "Failed to upload cover image. Please try again.",
-    "coverImageHelpText": "Upload an image to IPFS or paste a URL from an allowed host."
+    "coverImageHelpText": "Upload an image to IPFS or paste a URL from an allowed host.",
+    "labelTags": "Tags",
+    "tagsLimitTip": "up to 5",
+    "placeholderTags": "Add a tag and press Enter",
+    "tagsHelpText": "Tags help others discover your campaign."
   },
   "Footer": {
     "tagline": "A decentralized launchpad where the community validates causes and contributions are accounted for on-chain.",
