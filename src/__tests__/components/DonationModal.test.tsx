@@ -55,6 +55,7 @@ jest.mock("next-intl", () => ({
       donatedSuccess: `${values?.amount} XLM donated successfully`,
       thankYou: "Thank you for supporting this cause.",
       viewExplorer: "View on Stellar Explorer →",
+      downloadReceipt: "Download Tax Receipt (PDF)",
       close: "Close",
       scientificNotation: "Scientific notation is not allowed.",
       invalidNumber: "Please enter a valid number.",
