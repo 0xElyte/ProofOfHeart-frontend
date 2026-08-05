@@ -20,6 +20,12 @@
     "socialLoginHint": "Crea una billetera Stellar protegida por tu cuenta social, sin necesidad de extensión.",
     "signedInAs": "Sesión iniciada como {name}"
   },
+  "PwaInstaller": {
+    "installTitle": "Instalar ProofOfHeart",
+    "installSubtitle": "Añade a la pantalla de inicio para disfrutar de la mejor experiencia",
+    "installButton": "Instalar",
+    "dismissButton": "Descartar"
+  },
   "Home": {
     "heroTitle": "Validación descentralizada para causas impulsadas por el corazón.",
     "heroSubtitle": "La comunidad valida, tú contribuyes y el impacto se registra en la cadena.",
