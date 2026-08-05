@@ -236,6 +236,8 @@
     "labelCategory": "Category",
     "labelStatus": "Status",
     "labelSortBy": "Sort by",
+    "listView": "List",
+    "mapView": "Map",
     "all": "All",
     "allCategories": "All Categories",
     "categoryChipAriaSelected": "{label}, {count} causes, selected",
@@ -426,6 +428,16 @@
     "withdrawalSuccess": "Withdrawal successful! You received {amount} XLM.",
     "errorNoSigners": "Please add at least one co-signer address.",
     "errorInvalidThreshold": "Required signatures must be between 1 and the number of co-signers."
+  },
+  "EditCampaignMetadata": {
+    "editMetadata": "Edit metadata",
+    "note": "These edits are stored off-chain on this device and don't change the on-chain campaign record.",
+    "titleLabel": "Title",
+    "descriptionLabel": "Description",
+    "coverImageUrlLabel": "Cover Image URL",
+    "saveButton": "Save changes",
+    "lastEdited": "Last edited",
+    "clearEdits": "Clear edits"
   },
   "Voting": {
     "title": "Vote on this cause",

@@ -11,26 +11,26 @@ describe("EditCampaignMetadata — accessibility (issue #676)", () => {
 
   function openPanel() {
     render(<EditCampaignMetadata {...props} />);
-    fireEvent.click(screen.getByRole("button", { name: /edit metadata/i }));
+    fireEvent.click(screen.getByRole("button", { name: /editMetadata/i }));
   }
 
   it("associates the Title label with its input", () => {
     openPanel();
-    expect(screen.getByLabelText("Title")).toHaveValue(props.initialTitle);
+    expect(screen.getByLabelText("titleLabel")).toHaveValue(props.initialTitle);
   });
 
   it("associates the Description label with its textarea", () => {
     openPanel();
-    expect(screen.getByLabelText("Description")).toHaveValue(props.initialDescription);
+    expect(screen.getByLabelText("descriptionLabel")).toHaveValue(props.initialDescription);
   });
 
   it("associates the Cover Image URL label with its input", () => {
     openPanel();
-    expect(screen.getByLabelText("Cover Image URL")).toHaveValue(props.initialCoverImageUrl);
+    expect(screen.getByLabelText("coverImageUrlLabel")).toHaveValue(props.initialCoverImageUrl);
   });
 
   it("uses campaign-scoped ids so multiple instances on one page never collide", () => {
     openPanel();
-    expect(screen.getByLabelText("Title")).toHaveAttribute("id", "edit-meta-title-42");
+    expect(screen.getByLabelText("titleLabel")).toHaveAttribute("id", "edit-meta-title-42");
   });
 });

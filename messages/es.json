@@ -236,6 +236,8 @@
     "labelCategory": "Categoría",
     "labelStatus": "Estado",
     "labelSortBy": "Ordenar por",
+    "listView": "Lista",
+    "mapView": "Mapa",
     "all": "Todas",
     "allCategories": "Todas las Categorías",
     "categoryChipAriaSelected": "{label}, {count} causas, seleccionada",
@@ -426,6 +428,16 @@
     "withdrawalSuccess": "¡Retiro exitoso! Recibiste {amount} XLM.",
     "errorNoSigners": "Por favor agrega al menos una dirección de co-firmante.",
     "errorInvalidThreshold": "Las firmas requeridas deben estar entre 1 y el número de co-firmantes."
+  },
+  "EditCampaignMetadata": {
+    "editMetadata": "Editar metadatos",
+    "note": "Estos cambios se guardan fuera de la cadena en este dispositivo y no modifican el registro de la campaña en la blockchain.",
+    "titleLabel": "Título",
+    "descriptionLabel": "Descripción",
+    "coverImageUrlLabel": "URL de la imagen de portada",
+    "saveButton": "Guardar cambios",
+    "lastEdited": "Última edición",
+    "clearEdits": "Borrar cambios"
   },
   "Voting": {
     "title": "Vota por esta causa",
