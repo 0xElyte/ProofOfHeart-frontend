@@ -169,13 +169,14 @@ export default function DonationModal({
 
   const validation = validateAmount(amount);
   const isFullyFunded = raised >= goal;
-  const amountError =
-    error ||
-    (isFullyFunded
-      ? "campaignAlreadyFunded"
-      : amount.trim() && !validation.valid
-        ? validation.errorKey || "Please enter a valid amount."
-        : null);
+  // Always a translation key so formatError() can resolve it through next-intl —
+  // never a hard-coded English sentence.
+  const validationErrorKey: DonationValidationKey | null = isFullyFunded
+    ? "campaignAlreadyFunded"
+    : amount.trim() && !validation.valid
+      ? (validation.errorKey ?? "invalidAmount")
+      : null;
+  const amountError = error || validationErrorKey;
   const amountNum = validation.amount || 0;
   const newRaised = raised + amountNum;
   const newPct = goal > 0 ? Math.min(100, Math.round((newRaised / goal) * 100)) : 0;
