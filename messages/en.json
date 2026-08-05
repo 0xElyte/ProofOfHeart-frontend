@@ -233,6 +233,8 @@
     "pageTitle": "Community Causes",
     "pageSubtitle": "Browse, search, and vote on causes that matter to you.",
     "searchPlaceholder": "Search causes by title, description, or category…",
+    "listView": "List View",
+    "mapView": "Map View",
     "labelCategory": "Category",
     "labelStatus": "Status",
     "labelSortBy": "Sort by",
