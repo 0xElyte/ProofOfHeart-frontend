@@ -54,7 +54,9 @@ test.describe("Edit Campaign Metadata", () => {
     await campaignLink.click();
 
     // Wait for Cause Detail page to load
-    await expect(page.getByRole("button", { name: /Edit metadata/i })).toBeVisible({ timeout: 10000 });
+    await expect(page.getByRole("button", { name: /Edit metadata/i })).toBeVisible({
+      timeout: 10000,
+    });
   });
 
   test("should block invalid image URL", async ({ page }) => {

@@ -74,6 +74,9 @@ jest.mock("@/lib/contractClient", () => ({
   claimRefund: jest.fn(),
   voteOnCampaign: jest.fn(),
   hasVoted: jest.fn(),
+  getApproveVotes: jest.fn(() => Promise.resolve(0)),
+  getRejectVotes: jest.fn(() => Promise.resolve(0)),
+  getAllCampaigns: jest.fn(() => Promise.resolve([])),
 }));
 
 jest.mock("@/components/CauseCard", () => ({
