@@ -13,6 +13,7 @@ import { WalletProvider } from "@/components/WalletContext";
 import { DevMockPanel } from "@/components/DevMockPanel";
 import OnboardingTour from "@/components/OnboardingTour";
 import MaintenanceBypass from "@/components/MaintenanceBypass";
+import { PwaInstaller } from "@/components/PwaInstaller";
 import ThirdPartyScripts from "@/components/ThirdPartyScripts";
 import { routing } from "@/i18n/routing";
 import { getTextDirection } from "@/lib/direction";
@@ -101,6 +102,7 @@ export default async function RootLayout({
                       <DevMockPanel />
                       <OnboardingTour />
                       <MaintenanceBypass />
+                      <PwaInstaller />
                     </div>
                   </WalletProvider>
                 </ToastProvider>
