@@ -689,7 +689,7 @@ function CausesContent() {
                     isFetchingNextPage={isFetchingNextPage}
                     onLoadMore={fetchNextPage}
                   />
-                  ) : (
+                ) : (
                   <div className="text-center py-20">
                     <div className="text-5xl mb-4">
                       {campaigns.length === 0 ? "📭" : debouncedSearch ? "🔍" : "🔎"}
