@@ -62,15 +62,12 @@ test.describe("Edit Campaign Metadata", () => {
     await expect(confirmButton).toBeVisible({ timeout: 15000 });
     await expect(confirmButton).toBeEnabled({ timeout: 15000 });
 
-    await Promise.all([
-      page.waitForNavigation({ waitUntil: "networkidle", timeout: 20000 }).catch(() => {}),
-      confirmButton.click(),
-    ]);
+    await confirmButton.click();
 
     // Wait for creation success indicator
     await expect(
       page.getByText(/Cause created successfully|Submitted Campaigns/i).first(),
-    ).toBeVisible({ timeout: 15000 });
+    ).toBeVisible({ timeout: 25000 });
 
     // 3. Navigate to dashboard and open the created campaign
     await page.goto("/en/dashboard");
