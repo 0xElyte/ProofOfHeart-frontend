@@ -79,9 +79,7 @@ test.describe("Edit Campaign Metadata", () => {
     await confirmButton.click();
 
     // Wait for creation success indicator
-    await expect(
-      page.getByText(/created successfully/i).first(),
-    ).toBeVisible({ timeout: 30000 });
+    await expect(page.getByText(/created successfully/i).first()).toBeVisible({ timeout: 30000 });
 
     // The app automatically redirects to the Cause Detail page (/causes/[id]).
     // Wait for Cause Detail page to load with the edit button
