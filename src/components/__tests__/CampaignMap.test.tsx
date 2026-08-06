@@ -258,9 +258,7 @@ describe("CampaignMap loading state", () => {
   });
 
   it("clears the loading state and renders the map when loading completes with valid campaigns", () => {
-    const { rerender } = render(
-      <CampaignMap campaigns={[]} isLoading={true} />,
-    );
+    const { rerender } = render(<CampaignMap campaigns={[]} isLoading={true} />);
 
     expect(screen.getByText("loading")).toBeInTheDocument();
 
@@ -283,15 +281,11 @@ describe("CampaignMap loading state", () => {
   });
 
   it("clears the loading state and shows empty state when loading completes with no valid campaigns", () => {
-    const { rerender } = render(
-      <CampaignMap campaigns={[]} isLoading={true} />,
-    );
+    const { rerender } = render(<CampaignMap campaigns={[]} isLoading={true} />);
 
     expect(screen.getByText("loading")).toBeInTheDocument();
 
-    rerender(
-      <CampaignMap campaigns={[]} isLoading={false} />,
-    );
+    rerender(<CampaignMap campaigns={[]} isLoading={false} />);
 
     expect(screen.queryByText("loading")).not.toBeInTheDocument();
     expect(screen.getByText("emptyTitle")).toBeInTheDocument();

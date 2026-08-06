@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState } from "react";
 import { useToast } from "@/components/ToastProvider";
 
 interface ShareButtonsProps {
