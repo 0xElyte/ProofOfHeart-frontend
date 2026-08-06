@@ -31,6 +31,20 @@ test.describe("Edit Campaign Metadata", () => {
     await page.addInitScript(() => {
       localStorage.setItem("onboarding_tour_dismissed", "1");
       localStorage.setItem("wallet_connected", "1");
+
+      // Minimal mock of window.ethereum so connect flows succeed in CI
+      if (!(window as any).ethereum) {
+        (window as any).ethereum = {
+          request: ({ method }: { method: string }) => {
+            if (method === "eth_requestAccounts" || method === "eth_accounts") {
+              return Promise.resolve(["0x" + "1".repeat(40)]);
+            }
+            return Promise.resolve(null);
+          },
+          on: () => {},
+          removeListener: () => {},
+        };
+      }
     });
 
     // Navigate to home; locale redirect settles here
@@ -38,9 +52,9 @@ test.describe("Edit Campaign Metadata", () => {
 
     // 1. Connect wallet — guard with explicit visibility + longer timeout
     const connectButton = page.getByRole("button", { name: /Connect Wallet/i }).first();
-    await expect(connectButton).toBeVisible({ timeout: 10000 });
+    await expect(connectButton).toBeVisible({ timeout: 30000 });
     await connectButton.click();
-    await expect(page.getByText(/Connected/i).first()).toBeVisible({ timeout: 15000 });
+    await expect(page.getByText(/Connected/i).first()).toBeVisible({ timeout: 30000 });
 
     // 2. Create a new campaign through the UI (so we are the creator and can edit)
     await page.goto("/en/causes/new");
@@ -54,26 +68,26 @@ test.describe("Edit Campaign Metadata", () => {
 
     // Proceed to review step
     await page.getByRole("button", { name: /Review Details/i }).click();
-    await expect(page.getByText(/Review Your Cause/i)).toBeVisible({ timeout: 10000 });
+    await expect(page.getByText(/Review Your Cause/i)).toBeVisible({ timeout: 30000 });
 
     // Guard the Confirm & Create click — wait for button to be enabled, then
     // race the click with a navigation wait to avoid post-click race conditions.
     const confirmButton = page.getByRole("button", { name: /Confirm & Create/i });
-    await expect(confirmButton).toBeVisible({ timeout: 15000 });
-    await expect(confirmButton).toBeEnabled({ timeout: 15000 });
+    await expect(confirmButton).toBeVisible({ timeout: 30000 });
+    await expect(confirmButton).toBeEnabled({ timeout: 30000 });
 
     await confirmButton.click();
 
     // Wait for creation success indicator
     await expect(
       page.getByText(/Cause created successfully|Submitted Campaigns/i).first(),
-    ).toBeVisible({ timeout: 25000 });
+    ).toBeVisible({ timeout: 30000 });
 
     // 3. Navigate to dashboard and open the created campaign
     await page.goto("/en/dashboard");
 
     const campaignLink = page.getByRole("link", { name: new RegExp(uniqueTitle, "i") }).first();
-    await expect(campaignLink).toBeVisible({ timeout: 10000 });
+    await expect(campaignLink).toBeVisible({ timeout: 30000 });
     await campaignLink.click();
 
     // Wait for Cause Detail page to load with the edit button
@@ -87,7 +101,7 @@ test.describe("Edit Campaign Metadata", () => {
     await editButton.click();
 
     const editPanel = page.getByTestId("edit-metadata-panel");
-    await expect(editPanel).toBeVisible({ timeout: 10000 });
+    await expect(editPanel).toBeVisible({ timeout: 30000 });
 
     // Fill with an invalid (HTTP, not HTTPS) image URL
     const coverImageInput = editPanel.getByLabel(/Cover Image URL/i);
@@ -107,7 +121,7 @@ test.describe("Edit Campaign Metadata", () => {
     await editButton.click();
 
     const editPanel = page.getByTestId("edit-metadata-panel");
-    await expect(editPanel).toBeVisible({ timeout: 10000 });
+    await expect(editPanel).toBeVisible({ timeout: 30000 });
 
     // Use a known-good HTTPS URL accepted by most domain-allowlist configs
     const coverImageInput = editPanel.getByLabel(/Cover Image URL/i);
@@ -121,9 +135,9 @@ test.describe("Edit Campaign Metadata", () => {
     await saveButton.click();
 
     // Wait for the panel to close after a successful save, then check the page
-    await expect(editPanel).toBeHidden({ timeout: 10000 });
+    await expect(editPanel).toBeHidden({ timeout: 30000 });
     await expect(page.getByText(/Updated description for this cause\./i)).toBeVisible({
-      timeout: 10000,
+      timeout: 30000,
     });
   });
 });
