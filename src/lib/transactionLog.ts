@@ -14,7 +14,8 @@ export type WalletTransactionAction =
   | "claim_reserve"
   | "deposit_revenue"
   | "withdraw"
-  | "vote";
+  | "vote"
+  | "set_personal_cap";
 
 export interface WalletTransactionLogEntry {
   walletAddress: string;
