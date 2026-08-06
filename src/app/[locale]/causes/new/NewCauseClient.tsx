@@ -433,7 +433,7 @@ export default function CreateCampaignPage() {
                       : "bg-white dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-700"
                   }`}
                 >
-                  Write
+                  {t("tabWrite")}
                 </button>
                 <button
                   type="button"
@@ -444,7 +444,7 @@ export default function CreateCampaignPage() {
                       : "bg-white dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-700"
                   }`}
                 >
-                  Preview
+                  {t("tabPreview")}
                 </button>
               </div>
               {descriptionTab === "write" ? (
@@ -717,7 +717,7 @@ export default function CreateCampaignPage() {
                       htmlFor="revenueShareBps"
                       className="text-xs text-zinc-500 dark:text-zinc-400 shrink-0"
                     >
-                      Exact bps:
+                      {t("labelExactBps")}
                     </label>
                     <input
                       id="revenueShareBps"
@@ -735,7 +735,7 @@ export default function CreateCampaignPage() {
                       }}
                       className="w-24 rounded-lg border border-zinc-300 bg-white px-2 py-1 text-xs text-zinc-900 outline-none transition focus:border-blue-500 focus:ring-1 focus:ring-blue-200 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50"
                     />
-                    <span className="text-xs text-zinc-400">/ 10 000</span>
+                    <span className="text-xs text-zinc-400">{t("revenueShareBpsDenominator")}</span>
                   </div>
 
                   {err("revenueSharePercentage") && (
@@ -845,7 +845,7 @@ export default function CreateCampaignPage() {
             </p>
             {errorKeys.coverImageUrl && (
               <p id="cover-image-error" role="alert" className="text-xs text-red-500 mt-1">
-                Please enter a valid URL (must start with http:// or https://).
+                {t("invalidCoverImageUrl")}
               </p>
             )}
             {coverImageUrl && !errorKeys.coverImageUrl && (
@@ -888,9 +888,12 @@ export default function CreateCampaignPage() {
                   >
                     <div className="flex-1 space-y-2">
                       <div className="flex items-center gap-2">
-                        <span className="text-xs font-medium text-zinc-500 w-24 shrink-0">
-                          Target (XLM)
-                        </span>
+                        <label
+                          htmlFor={`milestone-${idx}-target`}
+                          className="text-xs font-medium text-zinc-500 w-24 shrink-0"
+                        >
+                          {t("milestoneTarget")}
+                        </label>
                         <input
                           type="number"
                           value={m.targetAmount}
@@ -906,9 +909,12 @@ export default function CreateCampaignPage() {
                         />
                       </div>
                       <div className="flex items-center gap-2">
-                        <span className="text-xs font-medium text-zinc-500 w-24 shrink-0">
-                          Description
-                        </span>
+                        <label
+                          htmlFor={`milestone-${idx}-description`}
+                          className="text-xs font-medium text-zinc-500 w-24 shrink-0"
+                        >
+                          {t("milestoneDescription")}
+                        </label>
                         <input
                           type="text"
                           value={m.description}
