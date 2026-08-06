@@ -1,3 +1,12 @@
+import { normalizeAddress } from "./stellar";
+import { hasOffchainApiBaseUrl, requestOffchainJson } from "./offchainApiClient";
+import {
+  readAllEntries,
+  writeAllEntries,
+  appendTimestamp,
+  filterAndSortByTimestamp,
+} from "./logUtil";
+
 export type WalletTransactionAction =
   | "contribute"
   | "claim_refund"
@@ -14,15 +23,6 @@ export interface WalletTransactionLogEntry {
   txHash: string;
   timestamp: number;
 }
-
-import { normalizeAddress } from "./stellar";
-import { hasOffchainApiBaseUrl, requestOffchainJson } from "./offchainApiClient";
-import {
-  readAllEntries,
-  writeAllEntries,
-  appendTimestamp,
-  filterAndSortByTimestamp,
-} from "./logUtil";
 
 const STORAGE_KEY = "proof_of_heart_wallet_tx_log_v1";
 
