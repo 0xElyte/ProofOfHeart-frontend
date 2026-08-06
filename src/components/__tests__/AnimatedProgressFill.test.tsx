@@ -21,9 +21,7 @@ jest.mock("@/hooks/useReducedMotion", () => ({
 
 import { useReducedMotion } from "@/hooks/useReducedMotion";
 
-const mockUseReducedMotion = useReducedMotion as jest.MockedFunction<
-  typeof useReducedMotion
->;
+const mockUseReducedMotion = useReducedMotion as jest.MockedFunction<typeof useReducedMotion>;
 
 describe("AnimatedProgressFill", () => {
   beforeEach(() => {

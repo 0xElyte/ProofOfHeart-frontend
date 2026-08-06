@@ -11,12 +11,7 @@ jest.mock("@/components/ToastProvider", () => ({
 
 describe("ShareButtons", () => {
   it("renders both social share buttons and QR entry point from the same panel", () => {
-    render(
-      <ShareButtons
-        url="https://example.com/campaign/1"
-        title="Test Campaign"
-      />,
-    );
+    render(<ShareButtons url="https://example.com/campaign/1" title="Test Campaign" />);
 
     expect(screen.getByRole("button", { name: "Copy link" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Share on X" })).toBeInTheDocument();
@@ -26,12 +21,7 @@ describe("ShareButtons", () => {
 
   it("toggles the QR panel inline within the share panel", async () => {
     const user = userEvent.setup();
-    render(
-      <ShareButtons
-        url="https://example.com/campaign/1"
-        title="Test Campaign"
-      />,
-    );
+    render(<ShareButtons url="https://example.com/campaign/1" title="Test Campaign" />);
 
     const qrButton = screen.getByRole("button", { name: "Show QR code" });
     expect(qrButton).toHaveAttribute("aria-expanded", "false");
@@ -56,18 +46,11 @@ describe("ShareButtons", () => {
     await user.click(screen.getByRole("button", { name: "Show QR code" }));
 
     expect(screen.getByAltText("QR code for campaign URL")).toBeInTheDocument();
-    expect(
-      screen.getByAltText("QR code for contribution wallet address"),
-    ).toBeInTheDocument();
+    expect(screen.getByAltText("QR code for contribution wallet address")).toBeInTheDocument();
   });
 
   it("has accessible QR panel with aria-controls", () => {
-    render(
-      <ShareButtons
-        url="https://example.com/campaign/1"
-        title="Test Campaign"
-      />,
-    );
+    render(<ShareButtons url="https://example.com/campaign/1" title="Test Campaign" />);
 
     const qrButton = screen.getByRole("button", { name: "Show QR code" });
     expect(qrButton).toHaveAttribute("aria-controls", "qr-panel");

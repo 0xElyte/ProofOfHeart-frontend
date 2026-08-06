@@ -133,7 +133,6 @@ export default function CreateCampaignPage() {
   const [txPhase, setTxPhase] = useState<TransactionLifecyclePhase | null>(null);
 
   const DRAFT_KEY = "proof_of_heart_next_draft";
-  const CREATOR_EMAIL_WEBHOOK_URL = process.env.NEXT_PUBLIC_CREATOR_EMAIL_WEBHOOK_URL?.trim() ?? "";
 
   useEffect(() => {
     try {
@@ -262,10 +261,10 @@ export default function CreateCampaignPage() {
     campaignTitle: string,
     creatorAddress: string,
   ) => {
-    if (!CREATOR_EMAIL_WEBHOOK_URL || !email) return;
+    if (!email) return;
 
     try {
-      await fetch(CREATOR_EMAIL_WEBHOOK_URL, {
+      await fetch("/api/email-opt-in", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -274,7 +273,6 @@ export default function CreateCampaignPage() {
           campaignId,
           campaignTitle,
           creatorAddress,
-          source: "proof_of_heart_frontend",
           timestamp: new Date().toISOString(),
         }),
       });

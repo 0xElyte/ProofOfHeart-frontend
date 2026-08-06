@@ -1,5 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import MultiSigWithdrawalPanel from "../MultiSigWithdrawalPanel";
+import { Category } from "@/types";
 
 jest.mock("../../hooks/useMultiSigProposals", () => ({
   useMultiSigProposals: jest.fn(),
@@ -63,7 +64,7 @@ const mockCampaign = {
   funds_withdrawn: false,
   is_cancelled: false,
   is_verified: false,
-  category: "Learner" as const,
+  category: Category.Learner,
   has_revenue_sharing: false,
   revenue_share_percentage: 0,
 };
@@ -83,6 +84,7 @@ function setupProposal(signers: Array<{ address: string; signedAt?: number }>) {
 describe("MultiSigWithdrawalPanel", () => {
   it("renders per-signer rows with address and status", () => {
     mockUseMultiSigProposals.mockReturnValue({
+      proposals: [],
       activeProposal: setupProposal([
         { address: "GABC12345678901234567890123456789012345678901234567890" },
         {
@@ -108,6 +110,7 @@ describe("MultiSigWithdrawalPanel", () => {
 
   it("visually distinguishes the current wallet signer with a highlight", () => {
     mockUseMultiSigProposals.mockReturnValue({
+      proposals: [],
       activeProposal: setupProposal([
         { address: "GABC12345678901234567890123456789012345678901234567890" },
         {
@@ -134,6 +137,7 @@ describe("MultiSigWithdrawalPanel", () => {
 
   it("renders all signer rows correctly", () => {
     mockUseMultiSigProposals.mockReturnValue({
+      proposals: [],
       activeProposal: setupProposal([
         { address: "GABC12345678901234567890123456789012345678901234567890" },
         {
