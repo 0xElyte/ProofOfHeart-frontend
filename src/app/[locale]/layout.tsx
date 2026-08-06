@@ -72,9 +72,16 @@ export default async function RootLayout({
 
           #569 — A per-request nonce is generated in middleware and attached here
           so that `script-src` does not need `'unsafe-inline'`.
+
+          suppressHydrationWarning: the nonce only exists in the server-rendered
+          HTML (React deliberately omits `nonce` from the client hydration
+          tree), so hydration would otherwise warn about the attribute
+          mismatch. The attribute is left as-is in the DOM, which is what CSP
+          needs; nothing about the script's content ever changes.
         */}
         <script
           nonce={nonce}
+          suppressHydrationWarning
           dangerouslySetInnerHTML={{
             __html: getThemeBlockingScript(),
           }}
