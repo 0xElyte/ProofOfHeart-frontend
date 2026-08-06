@@ -555,5 +555,24 @@
     "opening": "Opening secure checkout…",
     "error": "Could not open the payment provider. Please try again.",
     "poweredBy": "Powered by {provider}"
+  },
+  "PersonalCap": {
+    "title": "Personal Contribution Cap",
+    "description": "Set a maximum amount you want to contribute to this campaign.",
+    "loading": "Loading your personal cap…",
+    "currentCapLabel": "Current cap:",
+    "contributedSoFar": "You have contributed {amount} XLM so far.",
+    "noCapSet": "No personal cap set. You can contribute any amount.",
+    "currentContributionLabel": "You have contributed:",
+    "amountPlaceholder": "Enter XLM amount",
+    "amountAriaLabel": "Personal cap amount in XLM",
+    "setCap": "Set Cap",
+    "setting": "Setting…",
+    "capBelowContribution": "This cap is below your current contribution of {amount} XLM.",
+    "removeCap": "Remove Cap",
+    "removing": "Removing…",
+    "positiveAmountWarning": "Cap must be a positive amount.",
+    "capSetSuccess": "Personal cap set to {amount} XLM.",
+    "capRemovedSuccess": "Personal cap removed."
   }
 }

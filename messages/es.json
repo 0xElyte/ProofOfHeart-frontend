@@ -555,5 +555,24 @@
     "opening": "Abriendo el pago seguro…",
     "error": "No se pudo abrir el proveedor de pago. Inténtalo de nuevo.",
     "poweredBy": "Con la tecnología de {provider}"
+  },
+  "PersonalCap": {
+    "title": "Límite de Contribución Personal",
+    "description": "Establece una cantidad máxima que quieres contribuir a esta campaña.",
+    "loading": "Cargando tu límite personal…",
+    "currentCapLabel": "Límite actual:",
+    "contributedSoFar": "Has contribuido {amount} XLM hasta ahora.",
+    "noCapSet": "No hay límite personal establecido. Puedes contribuir cualquier cantidad.",
+    "currentContributionLabel": "Has contribuido:",
+    "amountPlaceholder": "Introduce cantidad en XLM",
+    "amountAriaLabel": "Cantidad del límite personal en XLM",
+    "setCap": "Establecer Límite",
+    "setting": "Estableciendo…",
+    "capBelowContribution": "Este límite está por debajo de tu contribución actual de {amount} XLM.",
+    "removeCap": "Quitar Límite",
+    "removing": "Quitando…",
+    "positiveAmountWarning": "El límite debe ser una cantidad positiva.",
+    "capSetSuccess": "Límite personal establecido en {amount} XLM.",
+    "capRemovedSuccess": "Límite personal eliminado."
   }
 }
