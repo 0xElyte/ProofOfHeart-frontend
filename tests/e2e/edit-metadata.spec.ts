@@ -45,7 +45,9 @@ test.describe("Edit Campaign Metadata", () => {
     // 2. Create a new campaign through the UI (so we are the creator and can edit)
     await page.goto("/en/causes/new");
 
-    await page.getByLabel(/Campaign Title/i).fill("My E2E Cause");
+    // Use a unique title so concurrent tests don't clash on the dashboard
+    const uniqueTitle = `My E2E Cause ${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+    await page.getByLabel(/Campaign Title/i).fill(uniqueTitle);
     await page.getByLabel(/Description/i).fill("Original description for this cause.");
     await page.getByLabel(/Funding Goal/i).fill("1000");
     await page.getByLabel(/Duration/i).fill("15");
@@ -73,7 +75,7 @@ test.describe("Edit Campaign Metadata", () => {
     // 3. Navigate to dashboard and open the created campaign
     await page.goto("/en/dashboard");
 
-    const campaignLink = page.getByRole("link", { name: /My E2E Cause/i }).first();
+    const campaignLink = page.getByRole("link", { name: new RegExp(uniqueTitle, "i") }).first();
     await expect(campaignLink).toBeVisible({ timeout: 10000 });
     await campaignLink.click();
 
@@ -87,15 +89,7 @@ test.describe("Edit Campaign Metadata", () => {
     const editButton = page.getByRole("button", { name: /Edit metadata/i });
     await editButton.click();
 
-    // Prefer a dialog role for the edit panel; fall back to a visible ancestor
-    // that contains the Cover Image URL label.
-    let editPanel = page.getByRole("dialog", { name: /Edit metadata/i }).first();
-    if ((await editPanel.count()) === 0) {
-      editPanel = page
-        .locator("section, div")
-        .filter({ has: page.getByLabel(/Cover Image URL/i) })
-        .first();
-    }
+    const editPanel = page.getByTestId("edit-metadata-panel");
     await expect(editPanel).toBeVisible({ timeout: 10000 });
 
     // Fill with an invalid (HTTP, not HTTPS) image URL
@@ -115,15 +109,7 @@ test.describe("Edit Campaign Metadata", () => {
     const editButton = page.getByRole("button", { name: /Edit metadata/i });
     await editButton.click();
 
-    // Prefer a dialog role for the edit panel; fall back to a visible ancestor
-    // that contains the Cover Image URL label.
-    let editPanel = page.getByRole("dialog", { name: /Edit metadata/i }).first();
-    if ((await editPanel.count()) === 0) {
-      editPanel = page
-        .locator("section, div")
-        .filter({ has: page.getByLabel(/Cover Image URL/i) })
-        .first();
-    }
+    const editPanel = page.getByTestId("edit-metadata-panel");
     await expect(editPanel).toBeVisible({ timeout: 10000 });
 
     // Use a known-good HTTPS URL accepted by most domain-allowlist configs
