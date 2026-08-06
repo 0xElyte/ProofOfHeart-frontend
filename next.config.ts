@@ -134,11 +134,6 @@ const nextConfig: NextConfig = {
       {
         source: "/:path*",
         headers: [
-          // Content Security Policy
-          {
-            key: "Content-Security-Policy",
-            value: CSP_DIRECTIVES,
-          },
           // Prevent clickjacking
           {
             key: "X-Frame-Options",
