@@ -1,4 +1,4 @@
-import { act, cleanup, render, screen, waitFor } from "@testing-library/react";
+import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import CausesClient from "@/app/[locale]/causes/CausesClient";
 import { Category, type Campaign } from "@/types";
@@ -74,9 +74,6 @@ jest.mock("@/lib/contractClient", () => ({
   claimRefund: jest.fn(),
   voteOnCampaign: jest.fn(),
   hasVoted: jest.fn(),
-  getApproveVotes: jest.fn().mockResolvedValue(0),
-  getRejectVotes: jest.fn().mockResolvedValue(0),
-  getAllCampaigns: jest.fn().mockResolvedValue([]),
 }));
 
 jest.mock("@/components/CauseCard", () => ({
@@ -91,21 +88,13 @@ describe("Causes filters URL sync", () => {
     mockUseSearchParams.mockReturnValue(new URLSearchParams(""));
   });
 
-  afterEach(async () => {
-    // Flush all pending microtasks so async state updates (e.g. setVoteCounts)
-    // resolve inside the current act() scope and don't leak into the next test.
-    await act(async () => {
-      await Promise.resolve();
-    });
-    cleanup();
+  afterEach(() => {
     jest.useRealTimers();
   });
 
   it("syncs category, status, sort and search to URL", async () => {
     const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime });
-    await act(async () => {
-      render(<CausesClient />);
-    });
+    render(<CausesClient />);
 
     const [statusSelect, sortSelect] = screen.getAllByRole("combobox");
     await user.click(screen.getByRole("button", { name: "Learner, 1 causes" }));
@@ -130,9 +119,7 @@ describe("Causes filters URL sync", () => {
       new URLSearchParams("q=astro&category=2&status=funded&sort=most_funded"),
     );
 
-    await act(async () => {
-      render(<CausesClient />);
-    });
+    render(<CausesClient />);
     const [statusSelect, sortSelect] = screen.getAllByRole("combobox");
 
     expect(await screen.findByDisplayValue("astro")).toBeInTheDocument();
@@ -144,16 +131,12 @@ describe("Causes filters URL sync", () => {
     expect(sortSelect).toHaveValue("most_funded");
   });
 
-  it("shows live category counts on filter chips", async () => {
-    await act(async () => {
-      render(<CausesClient />);
-    });
+  it("shows live category counts on filter chips", () => {
+    render(<CausesClient />);
 
-    await waitFor(() => {
-      expect(
-        screen.getByRole("button", { name: "All Categories, 1 causes, selected" }),
-      ).toHaveTextContent("1");
-    });
+    expect(
+      screen.getByRole("button", { name: "All Categories, 1 causes, selected" }),
+    ).toHaveTextContent("1");
     expect(screen.getByRole("button", { name: "Learner, 1 causes" })).toHaveTextContent("1");
     expect(screen.getByRole("button", { name: "Educational Startup, 0 causes" })).toHaveTextContent(
       "0",

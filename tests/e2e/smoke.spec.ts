@@ -28,9 +28,7 @@ test.describe("Core User Flow Smoke Test", () => {
           text.includes("access control checks") ||
           text.includes("The above error occurred in the <Lazy> component") ||
           text.includes("JSHandle@object") ||
-          text.includes("Uncaught error: Error") ||
-          text.includes("MISSING_MESSAGE") ||
-          text.includes("Could not resolve")
+          text.includes("Uncaught error: Error")
         ) {
           return;
         }
@@ -47,12 +45,9 @@ test.describe("Core User Flow Smoke Test", () => {
     // Step 1: Navigate to Home page
     await page.goto("/");
     await expect(page).toHaveURL(/\/(en|es)?\/?$/);
-    const title = page.getByRole("heading", { name: /ProofOfHeart/i, level: 1 });
-    if ((await title.count()) > 0) {
-      await expect(title.first()).toBeVisible();
-    } else {
-      await expect(page.locator("body")).toBeVisible();
-    }
+    await expect(
+      page.getByRole("heading", { name: /ProofOfHeart/i, level: 1 }).or(page.locator("body")),
+    ).toBeVisible();
 
     // Step 2: Navigate to Causes page
     await page.goto("/en/causes");
