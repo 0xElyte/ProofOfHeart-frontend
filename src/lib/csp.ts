@@ -115,28 +115,54 @@ export function getConnectSrcOrigins(): string[] {
 }
 
 /**
+ * Options controlling the generated policy.
+ */
+export interface CspBuildOptions {
+  /**
+   * Build the policy for the development server, where it is delivered as
+   * Content-Security-Policy-Report-Only. The policy is adjusted to that
+   * context so browsers don't log structural warnings:
+   * - `'unsafe-eval'` is allowed in script-src (the Turbopack dev runtime
+   *   evaluates React Server Components code with `eval`)
+   * - `frame-ancestors` is dropped (ignored in Report-Only; WebKit logs a
+   *   console error about it)
+   * - `report-to csp-endpoint` is added (WebKit warns that a Report-Only
+   *   policy without `report-to` has no effect)
+   */
+  development?: boolean;
+}
+
+/**
  * Builds a strict Content-Security-Policy header value.
  *
  * - `script-src`: self + nonce-gated inline scripts + configured third-party
  *   origins.  No `'unsafe-inline'` — every inline `<script>` must carry a
- *   matching nonce.  `'unsafe-eval'` is excluded: neither the Stellar SDK nor
- *   Freighter's postMessage-based API requires it.
+ *   matching nonce.  `'unsafe-eval'` is excluded in production: neither the
+ *   Stellar SDK nor Freighter's postMessage-based API requires it.
  * - `connect-src`: self + Soroban RPC + Horizon + off-chain API + error
  *   tracking + third-party origins.  No broad wildcards.
  *
  * @param nonce Base64-encoded nonce for the current request.
+ * @param options See {@link CspBuildOptions}.
  */
-export function buildCspHeader(nonce: string): string {
+export function buildCspHeader(nonce: string, options: CspBuildOptions = {}): string {
+  const { development = false } = options;
   const allow = (...origins: string[]) => origins.filter(Boolean).join(" ");
   const thirdPartyOrigins = getThirdPartyScriptOrigins();
   const connectOrigins = getConnectSrcOrigins();
 
+  // `'unsafe-inline'` is deliberately absent from script-src — every inline
+  // `<script>` must carry a matching nonce, which middleware generates
+  // per-request. `'unsafe-eval'` is only added back in dev (see middleware).
+  const scriptSrc = ["'self'", `'nonce-${nonce}'`, ...thirdPartyOrigins];
+  if (development) {
+    scriptSrc.push("'unsafe-eval'");
+  }
+
   const directives = [
     "default-src 'self'",
     // Scripts: self, nonce-gated inline scripts, and configured third-party CDNs.
-    // `'unsafe-inline'` is deliberately absent — every inline `<script>` must
-    // carry a matching nonce, which middleware generates per-request.
-    `script-src ${allow("'self'", `'nonce-${nonce}'`, ...thirdPartyOrigins)}`,
+    `script-src ${scriptSrc.join(" ")}`,
     // Styles: self and unsafe-inline (React + Tailwind inject styles via DOM APIs,
     // not through `<style>` tags, but the CSP still sees them as inline).
     "style-src 'self' 'unsafe-inline'",
@@ -144,10 +170,11 @@ export function buildCspHeader(nonce: string): string {
     "font-src 'self' data:",
     `connect-src ${allow("'self'", ...connectOrigins)}`,
     `frame-src ${allow("'self'", ...thirdPartyOrigins)}`,
-    "frame-ancestors 'none'",
+    ...(development ? [] : ["frame-ancestors 'none'"]),
     "form-action 'self'",
     "base-uri 'self'",
     "manifest-src 'self'",
+    ...(development ? ["report-to csp-endpoint"] : []),
   ];
 
   return directives.join("; ");

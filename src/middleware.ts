@@ -47,7 +47,15 @@ export default function middleware(req: NextRequest) {
   // #569 — Generate a per-request CSP nonce so inline scripts (the theme
   // blocking script in <head>) can be allow-listed without `'unsafe-inline'`.
   const nonce = generateCspNonce();
-  const cspHeader = buildCspHeader(nonce);
+  const isDev = process.env.NODE_ENV !== "production";
+  // Dev adapts the policy for the Report-Only context: `eval` is allowed (the
+  // Turbopack dev runtime evaluates RSC code with it), `frame-ancestors` is
+  // dropped (ignored in Report-Only; WebKit logs a console error about it),
+  // and `report-to` is added (WebKit warns that a Report-Only policy without
+  // it has no effect). This keeps the local console — and the e2e
+  // console-error assertions — noise-free while genuine violations still
+  // surface.
+  const cspHeader = buildCspHeader(nonce, { development: isDev });
 
   // Propagate the nonce to the layout via a request header so it can attach the
   // same value to the <script nonce="…"> attribute.
@@ -69,15 +77,20 @@ export default function middleware(req: NextRequest) {
   // static value.
   //
   // Production enforces the policy. Development ships the same policy as
-  // Content-Security-Policy-Report-Only: React's dev-mode debugging needs
-  // `unsafe-eval`, which strict CSP deliberately omits, so the header is only
-  // enforced where it is safe — but Report-Only still surfaces policy
-  // violations in the local console, so a break like the nonce-propagation
-  // issue above shows up in dev instead of only after deploy.
-  if (process.env.NODE_ENV === "production") {
-    response.headers.set("Content-Security-Policy", cspHeader);
-  } else {
+  // Content-Security-Policy-Report-Only (plus `'unsafe-eval'`, which the
+  // Turbopack dev runtime needs), so the header is only enforced where it is
+  // safe — but Report-Only still surfaces genuine policy violations in the
+  // local console, so a break like the nonce-propagation issue above shows up
+  // in dev instead of only after deploy.
+  if (isDev) {
     response.headers.set("Content-Security-Policy-Report-Only", cspHeader);
+    // WebKit only treats Report-Only policies that name a reporting group as
+    // effective. No collector exists locally, but declaring the endpoint (the
+    // group referenced by the `report-to` directive above) silences the
+    // "policy will have no effect" console error.
+    response.headers.set("Reporting-Endpoints", 'csp-endpoint="/api/csp-report"');
+  } else {
+    response.headers.set("Content-Security-Policy", cspHeader);
   }
 
   // #621 — Enforce HSTS on every response (including intl redirects) so that
