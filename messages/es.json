@@ -441,7 +441,8 @@
     "processing": "Procesando…",
     "withdrawalSuccess": "¡Retiro exitoso! Recibiste {amount} XLM.",
     "errorNoSigners": "Por favor agrega al menos una dirección de co-firmante.",
-    "errorInvalidThreshold": "Las firmas requeridas deben estar entre 1 y el número de co-firmantes."
+    "errorInvalidThreshold": "Las firmas requeridas deben estar entre 1 y el número de co-firmantes.",
+    "you": "Tú"
   },
   "EditCampaignMetadata": {
     "editMetadata": "Editar metadatos",
@@ -548,7 +549,8 @@
   },
   "CampaignMap": {
     "emptyTitle": "No hay campañas con datos de ubicación",
-    "emptyBody": "Las campañas con coordenadas aparecerán en este mapa. Cambia a la vista de lista para ver todas las campañas."
+    "emptyBody": "Las campañas con coordenadas aparecerán en este mapa. Cambia a la vista de lista para ver todas las campañas.",
+    "loading": "Cargando mapa…"
   },
   "Gamification": {
     "level_Bronze": "Bronce",

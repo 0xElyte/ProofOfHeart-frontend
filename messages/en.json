@@ -439,7 +439,8 @@
     "processing": "Processing…",
     "withdrawalSuccess": "Withdrawal successful! You received {amount} XLM.",
     "errorNoSigners": "Please add at least one co-signer address.",
-    "errorInvalidThreshold": "Required signatures must be between 1 and the number of co-signers."
+    "errorInvalidThreshold": "Required signatures must be between 1 and the number of co-signers.",
+    "you": "You"
   },
   "EditCampaignMetadata": {
     "editMetadata": "Edit metadata",
@@ -546,7 +547,8 @@
   },
   "CampaignMap": {
     "emptyTitle": "No campaigns with location data",
-    "emptyBody": "Campaigns with coordinates will appear on this map. Switch to list view to browse all campaigns."
+    "emptyBody": "Campaigns with coordinates will appear on this map. Switch to list view to browse all campaigns.",
+    "loading": "Loading map…"
   },
   "Gamification": {
     "level_Bronze": "Bronze",
