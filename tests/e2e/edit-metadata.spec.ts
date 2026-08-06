@@ -72,7 +72,7 @@ test.describe("Edit Campaign Metadata", () => {
 
     // Guard the Confirm & Create click — wait for button to be enabled, then
     // race the click with a navigation wait to avoid post-click race conditions.
-    const confirmButton = page.getByRole("button", { name: /Confirm & Create/i });
+    const confirmButton = page.getByRole("button", { name: /Confirm & Sign/i });
     await expect(confirmButton).toBeVisible({ timeout: 30000 });
     await expect(confirmButton).toBeEnabled({ timeout: 30000 });
 
@@ -80,19 +80,13 @@ test.describe("Edit Campaign Metadata", () => {
 
     // Wait for creation success indicator
     await expect(
-      page.getByText(/Cause created successfully|Submitted Campaigns/i).first(),
+      page.getByText(/created successfully/i).first(),
     ).toBeVisible({ timeout: 30000 });
 
-    // 3. Navigate to dashboard and open the created campaign
-    await page.goto("/en/dashboard");
-
-    const campaignLink = page.getByRole("link", { name: new RegExp(uniqueTitle, "i") }).first();
-    await expect(campaignLink).toBeVisible({ timeout: 30000 });
-    await campaignLink.click();
-
+    // The app automatically redirects to the Cause Detail page (/causes/[id]).
     // Wait for Cause Detail page to load with the edit button
     await expect(page.getByRole("button", { name: /Edit metadata/i })).toBeVisible({
-      timeout: 10000,
+      timeout: 30000,
     });
   });
 
