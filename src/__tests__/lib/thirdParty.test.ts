@@ -134,23 +134,28 @@ describe("thirdParty script registry", () => {
     }
   });
 
-  it("handles script load errors via onError callback", () => {
-    const onError = jest.fn();
-    const mod = loadWithEnv({
-      NEXT_PUBLIC_ANALYTICS_PROVIDER: "plausible",
-      NEXT_PUBLIC_ANALYTICS_DOMAIN: "proofofheart.xyz",
-    });
+  it("invokes a configured onError and warns when one is missing", () => {
+    const warnSpy = jest.spyOn(console, "warn").mockImplementation(() => {});
+    try {
+      const mod = loadWithEnv({
+        NEXT_PUBLIC_ANALYTICS_PROVIDER: "plausible",
+        NEXT_PUBLIC_ANALYTICS_DOMAIN: "proofofheart.xyz",
+      });
 
-    // Script configs returned by the registry have no onError by default.
-    for (const s of mod.getThirdPartyScripts()) {
-      mod.handleScriptError(s);
+      // Script configs returned by the registry have no onError by default, so
+      // handleScriptError surfaces the failure instead of swallowing it.
+      const [script] = mod.getThirdPartyScripts();
+      mod.handleScriptError(script);
+      expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining(script.id));
+
+      // When a consumer wires onError, handleScriptError invokes it instead.
+      const onError = jest.fn();
+      mod.handleScriptError({ ...script, onError });
+      expect(onError).toHaveBeenCalledTimes(1);
+      expect(warnSpy).toHaveBeenCalledTimes(1);
+    } finally {
+      warnSpy.mockRestore();
     }
-    expect(onError).not.toHaveBeenCalled();
-
-    // When a consumer wires onError, handleScriptError invokes it.
-    const script = mod.getThirdPartyScripts()[0];
-    mod.handleScriptError({ ...script, onError });
-    expect(onError).toHaveBeenCalledTimes(1);
   });
 
   it("does not return duplicate script ids", () => {

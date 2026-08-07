@@ -164,7 +164,22 @@ export function getAnalyticsProvider(): AnalyticsProvider | null {
   return getAnalyticsScript() ? readProvider() : null;
 }
 
-/** Invoke a script's error handler, if one is configured. */
+/**
+ * Handle a script that failed to load.
+ *
+ * Runs the script's own `onError` handler when one is configured. A missing
+ * handler would otherwise leave the failure silent — a blocked CDN or a CSP
+ * rejection — so in development a warning naming the script is emitted instead.
+ */
 export function handleScriptError(script: ThirdPartyScript): void {
-  script.onError?.();
+  if (script.onError) {
+    script.onError();
+    return;
+  }
+
+  if (process.env.NODE_ENV !== "production") {
+    console.warn(
+      `[thirdParty] Script "${script.id}" failed to load (${script.src}) and has no onError handler configured.`,
+    );
+  }
 }
