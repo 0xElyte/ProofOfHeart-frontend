@@ -1,4 +1,5 @@
 import type { Schema } from "hast-util-sanitize";
+import { stripPrototypePollutionKeys } from "./rehypeNoPrototypePollution";
 
 /** Protocol and tag restrictions applied on top of rehype-sanitize defaults. */
 export const MARKDOWN_SANITIZE_OVERRIDES: Partial<Schema> = {
@@ -15,52 +16,50 @@ export const MARKDOWN_SANITIZE_OVERRIDES: Partial<Schema> = {
  * Merge GitHub-style defaults with ProofOfHeart-specific hardening.
  * Called from SafeMarkdown at runtime so Jest can mock rehype-sanitize in integration tests.
  */
+const UNSAFE_PROTOCOLS = new Set(["javascript", "data", "vbscript"]);
+
+/** True for any attribute name that is an event handler (`on*`), case-insensitive. */
+function isEventHandlerAttribute(attr: string | readonly unknown[]): boolean {
+  return typeof attr === "string" && attr.toLowerCase().startsWith("on");
+}
+
+/**
+ * Merge GitHub-style defaults with ProofOfHeart-specific hardening.
+ * Called from SafeMarkdown at runtime so Jest can mock rehype-sanitize in integration tests.
+ */
 export function buildMarkdownSanitizeSchema(defaultSchema: Schema): Schema {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const cleanAttributes = (attrs: Array<string | [string, ...any[]]>) => {
-    return attrs.filter((attr) => {
-      if (typeof attr === "string") {
-        return !attr.toLowerCase().startsWith("on");
-      }
-      if (Array.isArray(attr) && typeof attr[0] === "string") {
-        return !attr[0].toLowerCase().startsWith("on");
-      }
-      return true;
-    });
+  // Merge first, then harden every field — so a future schema addition cannot
+  // reintroduce `on*` handlers or unsafe URL protocols (#770).
+  const mergedProtocols = {
+    ...defaultSchema.protocols,
+    ...MARKDOWN_SANITIZE_OVERRIDES.protocols,
   };
+  const hardenedProtocols = Object.fromEntries(
+    Object.entries(mergedProtocols).map(([field, allowed]) => [
+      field,
+      (allowed ?? []).filter((protocol) => !UNSAFE_PROTOCOLS.has(protocol.toLowerCase())),
+    ]),
+  );
 
   const mergedAttributes = {
     ...defaultSchema.attributes,
     ...MARKDOWN_SANITIZE_OVERRIDES.attributes,
   };
-
-  const attributes = Object.fromEntries(
+  const hardenedAttributes = Object.fromEntries(
     Object.entries(mergedAttributes).map(([tag, attrs]) => [
       tag,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      cleanAttributes(attrs as Array<string | [string, ...any[]]>),
+      (attrs ?? []).filter((attr) => !isEventHandlerAttribute(attr)),
     ]),
   );
 
-  const mergedProtocols = {
-    ...defaultSchema.protocols,
-    ...MARKDOWN_SANITIZE_OVERRIDES.protocols,
-  };
-
-  const protocols = Object.fromEntries(
-    Object.entries(mergedProtocols).map(([key, list]) => [
-      key,
-      (list ?? []).filter((proto) => {
-        const lower = proto.toLowerCase();
-        return lower !== "javascript" && lower !== "data" && lower !== "vbscript";
-      }),
-    ]),
-  );
-
-  return {
+  const schema: Schema = {
     ...defaultSchema,
     ...MARKDOWN_SANITIZE_OVERRIDES,
-    protocols,
-    attributes,
+    protocols: hardenedProtocols,
+    attributes: hardenedAttributes,
   };
+
+  // #634 — never let a prototype-polluting key survive in the schema that is
+  // spread onto rendered nodes.
+  return stripPrototypePollutionKeys(schema);
 }

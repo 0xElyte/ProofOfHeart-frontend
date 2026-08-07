@@ -21,6 +21,7 @@ import VotingComponent from "./VotingComponent";
 import { useSavedCampaigns } from "@/hooks/useSavedCampaigns";
 
 interface CauseCardProps {
+  priority?: boolean;
   campaign: Campaign;
   userWalletAddress: string | null;
   onVote: (campaignId: number, voteType: "upvote" | "downvote") => Promise<void>;
@@ -44,6 +45,7 @@ function formatDate(ts: number, locale: string) {
 }
 
 function CauseCard({
+  priority = false,
   campaign,
   userWalletAddress,
   onVote,
@@ -123,7 +125,8 @@ function CauseCard({
             alt={campaign.title}
             fill
             unoptimized
-            loading="lazy"
+            priority={priority}
+            loading={priority ? undefined : "lazy"}
             className="object-cover"
           />
         ) : (
@@ -168,9 +171,7 @@ function CauseCard({
         </h3>
 
         {/* Description */}
-        <p className="text-sm text-zinc-600 dark:text-zinc-400 line-clamp-3 leading-relaxed break-words h-[4.5rem]">
-          {campaign.description}
-        </p>
+        <CampaignDescription description={campaign.description} />
 
         {/* Funding progress */}
         <div className="space-y-1.5">
@@ -293,6 +294,7 @@ function causeCardPropsAreEqual(prev: CauseCardProps, next: CauseCardProps): boo
   const nextCampaign = next.campaign;
 
   return (
+    prev.priority === next.priority &&
     prev.userWalletAddress === next.userWalletAddress &&
     prev.userVote === next.userVote &&
     prev.upvotes === next.upvotes &&
