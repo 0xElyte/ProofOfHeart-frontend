@@ -9,6 +9,7 @@ import { useContributions } from "../hooks/useContributions";
 import { stroopsToXlmNumber } from "../lib/stellarAmount";
 import { useToast } from "./ToastProvider";
 import { parseContractError } from "../utils/contractErrors";
+import { exportContributionHistoryCsv } from "../utils/exportCsv";
 
 interface MyContributionsSectionProps {
   walletAddress: string;
@@ -193,15 +194,14 @@ export default function MyContributionsSection({ walletAddress }: MyContribution
         <h2 className="text-xl font-semibold">My Contributions</h2>
         <div className="flex items-center gap-3">
           {contributions.length > 0 && (
-            <a
-              href={`/api/dashboard/contributions/export?address=${encodeURIComponent(walletAddress)}`}
+            <button
+              onClick={() => exportContributionHistoryCsv(contributions, walletAddress)}
               className="inline-flex items-center gap-1.5 rounded-full border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-3.5 py-1.5 text-xs font-medium text-zinc-700 dark:text-zinc-300 transition hover:bg-zinc-100 dark:hover:bg-zinc-700"
               aria-label="Export contribution history as CSV"
-              download
             >
               <Download className="h-3.5 w-3.5" />
               <span>Export CSV</span>
-            </a>
+            </button>
           )}
           {claimableCount > 1 && (
             <button
