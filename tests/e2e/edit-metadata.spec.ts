@@ -30,33 +30,16 @@ test.describe("Edit Campaign Metadata", () => {
     // so the UI skips the wallet modal and treats the user as connected.
     await page.addInitScript(() => {
       localStorage.setItem("onboarding_tour_dismissed", "1");
-      localStorage.setItem("wallet_connected", "1");
-
-      // Minimal mock of window.ethereum so connect flows succeed in CI
-      if (!(window as any).ethereum) {
-        (window as any).ethereum = {
-          request: ({ method }: { method: string }) => {
-            if (method === "eth_requestAccounts" || method === "eth_accounts") {
-              return Promise.resolve(["0x" + "1".repeat(40)]);
-            }
-            return Promise.resolve(null);
-          },
-          on: () => {},
-          removeListener: () => {},
-        };
-      }
+      localStorage.setItem(
+        "stellar_wallet_public_key",
+        "GCREATOR1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ123",
+      );
     });
 
     // Navigate to home; locale redirect settles here
     await page.goto("/");
 
-    // 1. Connect wallet — guard with explicit visibility + longer timeout
-    const connectButton = page.getByRole("button", { name: /Connect Wallet/i }).first();
-    await expect(connectButton).toBeVisible({ timeout: 30000 });
-    await connectButton.click();
-    await expect(page.getByText(/Connected/i).first()).toBeVisible({ timeout: 30000 });
-
-    // 2. Create a new campaign through the UI (so we are the creator and can edit)
+    // 1. Create a new campaign through the UI (so we are the creator and can edit)
     await page.goto("/en/causes/new");
 
     // Use a unique title so concurrent tests don't clash on the dashboard
