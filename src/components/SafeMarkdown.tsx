@@ -22,6 +22,13 @@ export default function SafeMarkdown({ children, className }: SafeMarkdownProps)
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         rehypePlugins={[[rehypeSanitize, markdownSanitizeSchema], rehypeNoPrototypePollution]}
+        components={{
+          a: ({ href, children: linkChildren, ...props }) => (
+            <a href={href} target="_blank" rel="noopener noreferrer" {...props}>
+              {linkChildren}
+            </a>
+          ),
+        }}
       >
         {children}
       </ReactMarkdown>
