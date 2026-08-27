@@ -442,7 +442,7 @@ function CausesContent() {
   // -------------------------------------------------------------------------
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-zinc-50 to-zinc-100 dark:from-zinc-900 dark:to-zinc-800">
+    <div className="min-h-full bg-linear-to-br from-zinc-50 to-zinc-100 dark:from-zinc-900 dark:to-zinc-800">
       <main className="container mx-auto px-4 py-8">
         {/* Page heading */}
         <div className="mb-6">

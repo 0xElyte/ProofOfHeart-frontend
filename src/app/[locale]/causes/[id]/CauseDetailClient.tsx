@@ -256,7 +256,7 @@ export default function CauseDetailClient({ id }: { id: string }) {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-linear-to-br from-zinc-50 to-zinc-100 dark:from-zinc-900 dark:to-zinc-800">
+      <div className="min-h-full bg-linear-to-br from-zinc-50 to-zinc-100 dark:from-zinc-900 dark:to-zinc-800">
         <main className="container mx-auto px-4 py-24 text-center">
           <h1 className="text-3xl font-bold text-zinc-900 dark:text-zinc-50 mb-4">
             Failed to load cause
@@ -304,7 +304,7 @@ export default function CauseDetailClient({ id }: { id: string }) {
   const refundableXlm = stroopsToXlmNumber(refundableAmount) || 0;
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-zinc-50 to-zinc-100 dark:from-zinc-900 dark:to-zinc-800">
+    <div className="min-h-full bg-linear-to-br from-zinc-50 to-zinc-100 dark:from-zinc-900 dark:to-zinc-800">
       <main className="container mx-auto px-4 py-8 max-w-5xl">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
           <nav className="text-sm text-zinc-500 dark:text-zinc-400 flex items-center gap-2">
