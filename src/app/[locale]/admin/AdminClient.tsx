@@ -63,6 +63,7 @@ import { AdminSkeleton } from "@/components/Skeleton";
 import Pagination from "@/components/Pagination";
 import { Campaign } from "@/types";
 import { useContractVersion } from "@/hooks/useContractVersion";
+import { BPS_DENOMINATOR } from "@/utils/feeConstants";
 
 const ADMIN_CAMPAIGNS_PAGE_SIZE = 5;
 
@@ -309,7 +310,7 @@ export default function AdminDashboard() {
     if (!isAdmin) return showWarning(t("adminOnlyFee"));
 
     const fee = Number(feeInput);
-    if (isNaN(fee) || fee < 0 || fee > 10000) return showError(t("invalidFee"));
+    if (isNaN(fee) || fee < 0 || fee > BPS_DENOMINATOR) return showError(t("invalidFee"));
 
     if (fee > 1000) {
       setPendingFee(fee);
