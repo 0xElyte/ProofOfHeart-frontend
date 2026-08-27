@@ -1,4 +1,4 @@
-import * as StellarSdk from "@stellar/stellar-sdk";
+import { Account, Address, BASE_FEE, Contract, Keypair, Transaction, TransactionBuilder, nativeToScVal, rpc, scValToBigInt, xdr } from "@stellar/stellar-sdk";
 // #649 — Signing goes through the active wallet signer (Freighter or an
 // embedded social wallet) rather than the Freighter API directly.
 import { getSignerAddress, signTransactionXdr } from "./walletSigner";
@@ -64,11 +64,11 @@ export interface TransactionLifecycleOptions {
 // Soroban RPC server (lazily initialised)
 // ---------------------------------------------------------------------------
 
-let _server: StellarSdk.rpc.Server | null = null;
+let _server: rpc.Server | null = null;
 
-function getServer(): StellarSdk.rpc.Server {
+function getServer(): rpc.Server {
   if (!_server) {
-    _server = new StellarSdk.rpc.Server(SOROBAN_RPC_URL);
+    _server = new rpc.Server(SOROBAN_RPC_URL);
   }
   return _server;
 }
@@ -130,7 +130,7 @@ function isConnectionError(error: unknown): boolean {
  * error propagates and the next call reconnects. Errors the node returned
  * (contract errors, bad requests) keep the client in place.
  */
-async function withRpcServer<T>(fn: (server: StellarSdk.rpc.Server) => Promise<T>): Promise<T> {
+async function withRpcServer<T>(fn: (server: rpc.Server) => Promise<T>): Promise<T> {
   const server = getServer();
   try {
     return await fn(server);
@@ -153,7 +153,7 @@ function sleep(ms: number): Promise<void> {
 const ACCOUNT_CACHE_TTL_MS = 10_000;
 
 interface CachedAccount {
-  account: StellarSdk.Account;
+  account: Account;
   fetchedAt: number;
   sequenceOnFetch: string;
 }
@@ -165,7 +165,7 @@ const _accountCache = new Map<string, CachedAccount>();
  * ACCOUNT_CACHE_TTL_MS and the sequence number hasn't diverged.
  * On sequence mismatch the cache entry is discarded and a fresh lookup is made.
  */
-async function getCachedAccount(publicKey: string): Promise<StellarSdk.Account> {
+async function getCachedAccount(publicKey: string): Promise<Account> {
   const now = Date.now();
   const cached = _accountCache.get(publicKey);
 
@@ -196,9 +196,9 @@ async function getCachedAccount(publicKey: string): Promise<StellarSdk.Account> 
 
 async function buildAndSubmitTransaction(
   sourcePublicKey: string,
-  contractOp: StellarSdk.xdr.Operation,
+  contractOp: xdr.Operation,
   options?: TransactionLifecycleOptions,
-): Promise<StellarSdk.rpc.Api.GetSuccessfulTransactionResponse> {
+): Promise<rpc.Api.GetSuccessfulTransactionResponse> {
   const operation = options?.operation ?? "contract_invoke";
 
   options?.onStatus?.({ phase: "building" });
@@ -212,8 +212,8 @@ async function buildAndSubmitTransaction(
     throw error;
   }
 
-  const txBuilder = new StellarSdk.TransactionBuilder(sourceAccount, {
-    fee: StellarSdk.BASE_FEE,
+  const txBuilder = new TransactionBuilder(sourceAccount, {
+    fee: BASE_FEE,
     networkPassphrase: NETWORK_PASSPHRASE,
   });
   txBuilder.addOperation(contractOp);
@@ -228,7 +228,7 @@ async function buildAndSubmitTransaction(
     throw error;
   }
 
-  if (StellarSdk.rpc.Api.isSimulationError(simulated)) {
+  if (rpc.Api.isSimulationError(simulated)) {
     const simulationError = new Error(simulated.error ?? "Transaction simulation failed.");
     recordObservabilityFailure(classifySimulationFailure(simulationError, operation), {
       operation,
@@ -236,10 +236,10 @@ async function buildAndSubmitTransaction(
     throw simulationError;
   }
 
-  const preparedTx = StellarSdk.rpc
+  const preparedTx = rpc
     .assembleTransaction(
       builtTx,
-      simulated as StellarSdk.rpc.Api.SimulateTransactionSuccessResponse,
+      simulated as rpc.Api.SimulateTransactionSuccessResponse,
     )
     .build();
 
@@ -253,10 +253,10 @@ async function buildAndSubmitTransaction(
     wrapFreighterError(error);
   }
 
-  const signedTx = StellarSdk.TransactionBuilder.fromXDR(
+  const signedTx = TransactionBuilder.fromXDR(
     signedTxXdr,
     NETWORK_PASSPHRASE,
-  ) as StellarSdk.Transaction;
+  ) as Transaction;
 
   options?.onStatus?.({ phase: "submitting" });
   let submissionResult;
@@ -328,7 +328,7 @@ async function buildAndSubmitTransaction(
 
   options?.onStatus?.({ phase: "confirmed", txHash, rpcStatus: getResult.status });
   recordObservabilitySuccess(operation, txHash);
-  return getResult as StellarSdk.rpc.Api.GetSuccessfulTransactionResponse;
+  return getResult as rpc.Api.GetSuccessfulTransactionResponse;
 }
 
 function emitMockLifecycle(txHash: string, options?: TransactionLifecycleOptions): string {
@@ -342,15 +342,15 @@ function emitMockLifecycle(txHash: string, options?: TransactionLifecycleOptions
 
 async function invokeViewMethod(
   method: string,
-  args: StellarSdk.xdr.ScVal[] = [],
-): Promise<StellarSdk.xdr.ScVal | null> {
-  const contract = new StellarSdk.Contract(CONTRACT_ADDRESS);
+  args: xdr.ScVal[] = [],
+): Promise<xdr.ScVal | null> {
+  const contract = new Contract(CONTRACT_ADDRESS);
 
-  const zeroKeyPair = StellarSdk.Keypair.random();
-  const zeroAccount = new StellarSdk.Account(zeroKeyPair.publicKey(), "0");
+  const zeroKeyPair = Keypair.random();
+  const zeroAccount = new Account(zeroKeyPair.publicKey(), "0");
 
-  const txBuilder = new StellarSdk.TransactionBuilder(zeroAccount, {
-    fee: StellarSdk.BASE_FEE,
+  const txBuilder = new TransactionBuilder(zeroAccount, {
+    fee: BASE_FEE,
     networkPassphrase: NETWORK_PASSPHRASE,
   });
   txBuilder.addOperation(contract.call(method, ...args));
@@ -367,7 +367,7 @@ async function invokeViewMethod(
     throw error;
   }
 
-  if (StellarSdk.rpc.Api.isSimulationError(simulated)) {
+  if (rpc.Api.isSimulationError(simulated)) {
     const simulationError = new Error(simulated.error ?? `View call ${method} failed.`);
     recordObservabilityFailure(classifySimulationFailure(simulationError, method), {
       operation: method,
@@ -375,7 +375,7 @@ async function invokeViewMethod(
     throw simulationError;
   }
 
-  const successSim = simulated as StellarSdk.rpc.Api.SimulateTransactionSuccessResponse;
+  const successSim = simulated as rpc.Api.SimulateTransactionSuccessResponse;
   return successSim.result?.retval ?? null;
 }
 
@@ -383,19 +383,19 @@ async function invokeViewMethod(
 // XDR ↔ TypeScript decoders
 // ---------------------------------------------------------------------------
 
-function decodeCampaign(val: StellarSdk.xdr.ScVal): Campaign {
+function decodeCampaign(val: xdr.ScVal): Campaign {
   const map = val.map();
   if (!map) throw new Error("Expected ScVal map for Campaign.");
 
-  const fields: Record<string, StellarSdk.xdr.ScVal> = {};
+  const fields: Record<string, xdr.ScVal> = {};
   for (const entry of map) {
     const key = entry.key().sym().toString();
     fields[key] = entry.val();
   }
 
-  const funding_goal = StellarSdk.scValToBigInt(fields["funding_goal"]);
+  const funding_goal = scValToBigInt(fields["funding_goal"]);
   const deadline = Number(fields["deadline"].u64());
-  const amount_raised = StellarSdk.scValToBigInt(fields["amount_raised"]);
+  const amount_raised = scValToBigInt(fields["amount_raised"]);
   const is_active = fields["is_active"].b();
   const funds_withdrawn = fields["funds_withdrawn"].b();
   const is_cancelled = fields["is_cancelled"].b();
@@ -433,7 +433,7 @@ function decodeCampaign(val: StellarSdk.xdr.ScVal): Campaign {
 
   return {
     id: fields["id"].u32(),
-    creator: StellarSdk.Address.fromScVal(fields["creator"]).toString(),
+    creator: Address.fromScVal(fields["creator"]).toString(),
     title: fields["title"].str().toString(),
     description: rawDescription,
     funding_goal,
@@ -699,7 +699,7 @@ export async function getCampaign(id: number): Promise<Campaign | null> {
   if (USE_MOCKS) return MOCK_CAMPAIGNS.find((c) => c.id === id) ?? null;
   try {
     const result = await invokeViewMethod("get_campaign", [
-      StellarSdk.nativeToScVal(id, { type: "u32" }),
+      nativeToScVal(id, { type: "u32" }),
     ]);
     if (!result) return null;
     return decodeCampaign(result);
@@ -725,11 +725,11 @@ export async function getContribution(campaignId: number, contributor: string): 
   if (USE_MOCKS) return BigInt(0);
   try {
     const result = await invokeViewMethod("get_contribution", [
-      StellarSdk.nativeToScVal(campaignId, { type: "u32" }),
-      new StellarSdk.Address(contributor).toScVal(),
+      nativeToScVal(campaignId, { type: "u32" }),
+      new Address(contributor).toScVal(),
     ]);
     if (!result) return BigInt(0);
-    return StellarSdk.scValToBigInt(result);
+    return scValToBigInt(result);
   } catch (err) {
     throw new Error(parseContractError(err));
   }
@@ -743,11 +743,11 @@ export async function getPersonalCap(campaignId: number, contributor: string): P
   if (USE_MOCKS) return BigInt(0);
   try {
     const result = await invokeViewMethod("get_personal_cap", [
-      StellarSdk.nativeToScVal(campaignId, { type: "u32" }),
-      new StellarSdk.Address(contributor).toScVal(),
+      nativeToScVal(campaignId, { type: "u32" }),
+      new Address(contributor).toScVal(),
     ]);
     if (!result) return BigInt(0);
-    return StellarSdk.scValToBigInt(result);
+    return scValToBigInt(result);
   } catch (err) {
     throw new Error(parseContractError(err));
   }
@@ -757,10 +757,10 @@ export async function getRevenuePool(campaignId: number): Promise<bigint> {
   if (USE_MOCKS) return BigInt(0);
   try {
     const result = await invokeViewMethod("get_revenue_pool", [
-      StellarSdk.nativeToScVal(campaignId, { type: "u32" }),
+      nativeToScVal(campaignId, { type: "u32" }),
     ]);
     if (!result) return BigInt(0);
-    return StellarSdk.scValToBigInt(result);
+    return scValToBigInt(result);
   } catch (err) {
     throw new Error(parseContractError(err));
   }
@@ -770,11 +770,11 @@ export async function getRevenueClaimed(campaignId: number, contributor: string)
   if (USE_MOCKS) return BigInt(0);
   try {
     const result = await invokeViewMethod("get_revenue_claimed", [
-      StellarSdk.nativeToScVal(campaignId, { type: "u32" }),
-      new StellarSdk.Address(contributor).toScVal(),
+      nativeToScVal(campaignId, { type: "u32" }),
+      new Address(contributor).toScVal(),
     ]);
     if (!result) return BigInt(0);
-    return StellarSdk.scValToBigInt(result);
+    return scValToBigInt(result);
   } catch (err) {
     throw new Error(parseContractError(err));
   }
@@ -785,7 +785,7 @@ export async function getAdmin(): Promise<string> {
   try {
     const result = await invokeViewMethod("get_admin");
     if (!result) return "";
-    return StellarSdk.Address.fromScVal(result).toString();
+    return Address.fromScVal(result).toString();
   } catch (err) {
     throw new Error(parseContractError(err));
   }
@@ -836,12 +836,12 @@ export async function init(
   validateStellarAddress(admin);
   validateStellarAddress(token);
   if (USE_MOCKS) return emitMockLifecycle("mock_tx_init", options);
-  const contract = new StellarSdk.Contract(CONTRACT_ADDRESS);
+  const contract = new Contract(CONTRACT_ADDRESS);
   const op = contract.call(
     "init",
-    new StellarSdk.Address(admin).toScVal(),
-    new StellarSdk.Address(token).toScVal(),
-    StellarSdk.nativeToScVal(platformFee, { type: "u32" }),
+    new Address(admin).toScVal(),
+    new Address(token).toScVal(),
+    nativeToScVal(platformFee, { type: "u32" }),
   );
   try {
     const txResult = await buildAndSubmitTransaction(admin, op, { ...options, operation: "init" });
@@ -917,17 +917,17 @@ export async function createCampaign(
     );
     return txHash;
   }
-  const contract = new StellarSdk.Contract(CONTRACT_ADDRESS);
+  const contract = new Contract(CONTRACT_ADDRESS);
   const op = contract.call(
     "create_campaign",
-    new StellarSdk.Address(creator).toScVal(),
-    StellarSdk.nativeToScVal(title, { type: "string" }),
-    StellarSdk.nativeToScVal(finalDescription, { type: "string" }),
-    StellarSdk.nativeToScVal(fundingGoal, { type: "i128" }),
-    StellarSdk.nativeToScVal(durationDays, { type: "u64" }),
-    StellarSdk.nativeToScVal(category, { type: "u32" }),
-    StellarSdk.nativeToScVal(hasRevenueSharing, { type: "bool" }),
-    StellarSdk.nativeToScVal(revenueSharePercentage, { type: "u32" }),
+    new Address(creator).toScVal(),
+    nativeToScVal(title, { type: "string" }),
+    nativeToScVal(finalDescription, { type: "string" }),
+    nativeToScVal(fundingGoal, { type: "i128" }),
+    nativeToScVal(durationDays, { type: "u64" }),
+    nativeToScVal(category, { type: "u32" }),
+    nativeToScVal(hasRevenueSharing, { type: "bool" }),
+    nativeToScVal(revenueSharePercentage, { type: "u32" }),
   );
   try {
     const txResult = await buildAndSubmitTransaction(creator, op, {
@@ -953,12 +953,12 @@ export async function contribute(
   validateAmount(amount);
 
   if (USE_MOCKS) return emitMockLifecycle("mock_tx_contribute", options);
-  const contract = new StellarSdk.Contract(CONTRACT_ADDRESS);
+  const contract = new Contract(CONTRACT_ADDRESS);
   const op = contract.call(
     "contribute",
-    StellarSdk.nativeToScVal(campaignId, { type: "u32" }),
-    new StellarSdk.Address(contributor).toScVal(),
-    StellarSdk.nativeToScVal(amount, { type: "i128" }),
+    nativeToScVal(campaignId, { type: "u32" }),
+    new Address(contributor).toScVal(),
+    nativeToScVal(amount, { type: "i128" }),
   );
   try {
     const txResult = await buildAndSubmitTransaction(contributor, op, {
@@ -991,8 +991,8 @@ export async function withdrawFunds(
 ): Promise<string> {
   if (USE_MOCKS) return emitMockLifecycle("mock_tx_withdraw_funds", options);
   const callerAddress = await getSignerAddress();
-  const contract = new StellarSdk.Contract(CONTRACT_ADDRESS);
-  const op = contract.call("withdraw_funds", StellarSdk.nativeToScVal(campaignId, { type: "u32" }));
+  const contract = new Contract(CONTRACT_ADDRESS);
+  const op = contract.call("withdraw_funds", nativeToScVal(campaignId, { type: "u32" }));
   try {
     const txResult = await buildAndSubmitTransaction(callerAddress, op, {
       ...options,
@@ -1028,10 +1028,10 @@ export async function cancelCampaign(
 ): Promise<string> {
   if (USE_MOCKS) return emitMockLifecycle("mock_tx_cancel_campaign", options);
   const callerAddress = await getSignerAddress();
-  const contract = new StellarSdk.Contract(CONTRACT_ADDRESS);
+  const contract = new Contract(CONTRACT_ADDRESS);
   const op = contract.call(
     "cancel_campaign",
-    StellarSdk.nativeToScVal(campaignId, { type: "u32" }),
+    nativeToScVal(campaignId, { type: "u32" }),
   );
   try {
     const txResult = await buildAndSubmitTransaction(callerAddress, op, {
@@ -1063,11 +1063,11 @@ export async function claimRefund(
 ): Promise<string> {
   validateStellarAddress(contributor);
   if (USE_MOCKS) return emitMockLifecycle("mock_tx_claim_refund", options);
-  const contract = new StellarSdk.Contract(CONTRACT_ADDRESS);
+  const contract = new Contract(CONTRACT_ADDRESS);
   const op = contract.call(
     "claim_refund",
-    StellarSdk.nativeToScVal(campaignId, { type: "u32" }),
-    new StellarSdk.Address(contributor).toScVal(),
+    nativeToScVal(campaignId, { type: "u32" }),
+    new Address(contributor).toScVal(),
   );
   try {
     const txResult = await buildAndSubmitTransaction(contributor, op, {
@@ -1102,11 +1102,11 @@ export async function depositRevenue(
   validateAmount(amount);
   if (USE_MOCKS) return emitMockLifecycle("mock_tx_deposit_revenue", options);
   const callerAddress = await getSignerAddress();
-  const contract = new StellarSdk.Contract(CONTRACT_ADDRESS);
+  const contract = new Contract(CONTRACT_ADDRESS);
   const op = contract.call(
     "deposit_revenue",
-    StellarSdk.nativeToScVal(campaignId, { type: "u32" }),
-    StellarSdk.nativeToScVal(amount, { type: "i128" }),
+    nativeToScVal(campaignId, { type: "u32" }),
+    nativeToScVal(amount, { type: "i128" }),
   );
   try {
     const txResult = await buildAndSubmitTransaction(callerAddress, op, {
@@ -1126,11 +1126,11 @@ export async function claimRevenue(
 ): Promise<string> {
   validateStellarAddress(contributor);
   if (USE_MOCKS) return emitMockLifecycle("mock_tx_claim_revenue", options);
-  const contract = new StellarSdk.Contract(CONTRACT_ADDRESS);
+  const contract = new Contract(CONTRACT_ADDRESS);
   const op = contract.call(
     "claim_revenue",
-    StellarSdk.nativeToScVal(campaignId, { type: "u32" }),
-    new StellarSdk.Address(contributor).toScVal(),
+    nativeToScVal(campaignId, { type: "u32" }),
+    new Address(contributor).toScVal(),
   );
   try {
     const txResult = await buildAndSubmitTransaction(contributor, op, {
@@ -1155,10 +1155,10 @@ export async function verifyCampaign(
 ): Promise<string> {
   if (USE_MOCKS) return emitMockLifecycle("mock_tx_verify_campaign", options);
   const callerAddress = await getSignerAddress();
-  const contract = new StellarSdk.Contract(CONTRACT_ADDRESS);
+  const contract = new Contract(CONTRACT_ADDRESS);
   const op = contract.call(
     "verify_campaign",
-    StellarSdk.nativeToScVal(campaignId, { type: "u32" }),
+    nativeToScVal(campaignId, { type: "u32" }),
   );
   try {
     const txResult = await buildAndSubmitTransaction(callerAddress, op, {
@@ -1181,10 +1181,10 @@ export async function updatePlatformFee(
   if (USE_MOCKS) return emitMockLifecycle("mock_tx_update_platform_fee", options);
 
   const callerAddress = await getSignerAddress();
-  const contract = new StellarSdk.Contract(CONTRACT_ADDRESS);
+  const contract = new Contract(CONTRACT_ADDRESS);
   const op = contract.call(
     "update_platform_fee",
-    StellarSdk.nativeToScVal(platformFee, { type: "u32" }),
+    nativeToScVal(platformFee, { type: "u32" }),
   );
 
   try {
@@ -1209,8 +1209,8 @@ export async function updateAdmin(
   if (USE_MOCKS) return emitMockLifecycle("mock_tx_update_admin", options);
 
   const callerAddress = await getSignerAddress();
-  const contract = new StellarSdk.Contract(CONTRACT_ADDRESS);
-  const op = contract.call("update_admin", new StellarSdk.Address(newAdmin).toScVal());
+  const contract = new Contract(CONTRACT_ADDRESS);
+  const op = contract.call("update_admin", new Address(newAdmin).toScVal());
 
   try {
     const txResult = await buildAndSubmitTransaction(callerAddress, op, {
@@ -1231,7 +1231,7 @@ export async function getApproveVotes(campaignId: number): Promise<number> {
   if (USE_MOCKS) return 0;
   try {
     const result = await invokeViewMethod("get_approve_votes", [
-      StellarSdk.nativeToScVal(campaignId, { type: "u32" }),
+      nativeToScVal(campaignId, { type: "u32" }),
     ]);
     if (!result) return 0;
     return result.u32();
@@ -1244,7 +1244,7 @@ export async function getRejectVotes(campaignId: number): Promise<number> {
   if (USE_MOCKS) return 0;
   try {
     const result = await invokeViewMethod("get_reject_votes", [
-      StellarSdk.nativeToScVal(campaignId, { type: "u32" }),
+      nativeToScVal(campaignId, { type: "u32" }),
     ]);
     if (!result) return 0;
     return result.u32();
@@ -1257,8 +1257,8 @@ export async function hasVoted(campaignId: number, voter: string): Promise<boole
   if (USE_MOCKS) return false;
   try {
     const result = await invokeViewMethod("has_voted", [
-      StellarSdk.nativeToScVal(campaignId, { type: "u32" }),
-      new StellarSdk.Address(voter).toScVal(),
+      nativeToScVal(campaignId, { type: "u32" }),
+      new Address(voter).toScVal(),
     ]);
     if (!result) return false;
     return result.b();
@@ -1303,12 +1303,12 @@ export async function setPersonalCap(
   validateStellarAddress(contributor);
 
   if (USE_MOCKS) return emitMockLifecycle("mock_tx_set_personal_cap", options);
-  const contract = new StellarSdk.Contract(CONTRACT_ADDRESS);
+  const contract = new Contract(CONTRACT_ADDRESS);
   const op = contract.call(
     "set_personal_cap",
-    StellarSdk.nativeToScVal(campaignId, { type: "u32" }),
-    new StellarSdk.Address(contributor).toScVal(),
-    StellarSdk.nativeToScVal(capAmount, { type: "i128" }),
+    nativeToScVal(campaignId, { type: "u32" }),
+    new Address(contributor).toScVal(),
+    nativeToScVal(capAmount, { type: "i128" }),
   );
   try {
     const txResult = await buildAndSubmitTransaction(contributor, op, {
@@ -1351,12 +1351,12 @@ export async function voteOnCampaign(
       options,
     );
   }
-  const contract = new StellarSdk.Contract(CONTRACT_ADDRESS);
+  const contract = new Contract(CONTRACT_ADDRESS);
   const op = contract.call(
     "vote_on_campaign",
-    StellarSdk.nativeToScVal(campaignId, { type: "u32" }),
-    new StellarSdk.Address(voter).toScVal(),
-    StellarSdk.nativeToScVal(approve, { type: "bool" }),
+    nativeToScVal(campaignId, { type: "u32" }),
+    new Address(voter).toScVal(),
+    nativeToScVal(approve, { type: "bool" }),
   );
   try {
     const txResult = await buildAndSubmitTransaction(voter, op, {
@@ -1393,10 +1393,10 @@ export async function verifyCampaignWithVotes(
 ): Promise<string> {
   if (USE_MOCKS) return emitMockLifecycle("mock_tx_verify_with_votes", options);
   const callerAddress = await getSignerAddress();
-  const contract = new StellarSdk.Contract(CONTRACT_ADDRESS);
+  const contract = new Contract(CONTRACT_ADDRESS);
   const op = contract.call(
     "verify_campaign_with_votes",
-    StellarSdk.nativeToScVal(campaignId, { type: "u32" }),
+    nativeToScVal(campaignId, { type: "u32" }),
   );
   try {
     const txResult = await buildAndSubmitTransaction(callerAddress, op, {
@@ -1433,7 +1433,7 @@ export async function getCampaignReserve(campaignId: number): Promise<CampaignRe
   if (USE_MOCKS) return null;
   try {
     const result = await invokeViewMethod("get_campaign_reserve", [
-      StellarSdk.nativeToScVal(campaignId, { type: "u32" }),
+      nativeToScVal(campaignId, { type: "u32" }),
     ]);
     if (!result) return null;
 
@@ -1452,10 +1452,10 @@ export async function getCampaignReserve(campaignId: number): Promise<CampaignRe
       const key = entry.key().sym();
       switch (key) {
         case "amount":
-          amount = StellarSdk.scValToBigInt(entry.val());
+          amount = scValToBigInt(entry.val());
           break;
         case "release_timestamp":
-          release_timestamp = Number(StellarSdk.scValToBigInt(entry.val()));
+          release_timestamp = Number(scValToBigInt(entry.val()));
           break;
         case "released":
           released = entry.val().b() ?? false;
@@ -1479,8 +1479,8 @@ export async function claimReserve(
 ): Promise<string> {
   if (USE_MOCKS) return emitMockLifecycle("mock_tx_claim_reserve", options);
   const callerAddress = await getSignerAddress();
-  const contract = new StellarSdk.Contract(CONTRACT_ADDRESS);
-  const op = contract.call("claim_reserve", StellarSdk.nativeToScVal(campaignId, { type: "u32" }));
+  const contract = new Contract(CONTRACT_ADDRESS);
+  const op = contract.call("claim_reserve", nativeToScVal(campaignId, { type: "u32" }));
   try {
     const txResult = await buildAndSubmitTransaction(callerAddress, op, {
       ...options,
