@@ -1,5 +1,6 @@
 import { StrKey } from "@stellar/stellar-sdk";
 import { ContractError, ContractErrorException } from "./contractErrors";
+import { MAX_FEE_BPS } from "./feeConstants";
 
 export function validateStellarAddress(
   address: string,
@@ -41,7 +42,7 @@ export function validateDuration(days: number): void {
 }
 
 export function validateRevenueShare(bps: number): void {
-  if (bps < 1 || bps > 5000) {
+  if (bps < 1 || bps > MAX_FEE_BPS) {
     throw new ContractErrorException(ContractError.InvalidRevenueShare);
   }
 }
