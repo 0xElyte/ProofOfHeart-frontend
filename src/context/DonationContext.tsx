@@ -1,16 +1,8 @@
 "use client";
 
 import React, { createContext, useContext, useMemo, ReactNode } from "react";
-import { useDonationGracePeriod, PendingDonation } from "../hooks/useDonationGracePeriod";
-
-interface DonationContextType {
-  pendingDonations: PendingDonation[];
-  startGracePeriod: (
-    donation: Omit<PendingDonation, "id" | "timestamp" | "expiresAt">,
-  ) => PendingDonation;
-  cancelDonation: (id: string) => PendingDonation | undefined;
-  finalizeDonation: (id: string) => void;
-}
+import { useDonationGracePeriod } from "../hooks/useDonationGracePeriod";
+import type { DonationContextType } from "../types";
 
 const DonationContext = createContext<DonationContextType | null>(null);
 
