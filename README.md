@@ -37,7 +37,7 @@ The project follows the standard **Next.js App Router** architecture:
 - `src/utils/`: (Planned) Utility functions and constants.
 - `public/`: Static assets like images and fonts.
 
-## ✨ Current Frontend Features
+## ✨ Current Frontend Features.
 
 - Campaign exploration and detail pages backed by the Soroban contract service layer.
 - Wallet-aware creator and contributor actions including withdrawal, refunds, and admin verification.
